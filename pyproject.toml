@@ -34,7 +34,8 @@ dev = [
     "langchain",
     "langgraph",
     "langchain-core",
-    "langchain-openai"
+    "langchain-openai",
+    "httpx"
 ]
 
 [tool.ruff]
@@ -49,4 +50,4 @@ strict = true
 where = ["src"]
 
 [project.urls]
-Homepage = "https://???"
+Homepage = "https://github.com/s-toufik/agents"
