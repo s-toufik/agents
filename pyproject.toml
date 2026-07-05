@@ -24,8 +24,14 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest",
+    "fastapi",
+    "uvicorn[standard]",
+    "uvloop",
     "loguru",
     "omegaconf",
+    "pydantic>=2",
+    "sqlglot",
+    "langgraph-checkpoint-sqlite",
     "hypothesis>=6.151.9",
     "pytest-asyncio",
     "ruff",
