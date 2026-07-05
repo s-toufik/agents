@@ -24,6 +24,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest",
+    "loguru",
+    "omegaconf",
     "hypothesis>=6.151.9",
     "pytest-asyncio",
     "ruff",
