@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from agentic.agent.graph.agent_graph import AgentGraph
 from agentic.agent.graph.execution_node import ExecutorNode
@@ -24,6 +24,7 @@ def build_agent(
     max_tokens:     int  = 8_000,
     max_iterations: int  = 6,
     use_streaming:  bool = False,
+    on_token: Optional[Any] = None,
     checkpointer:   Any  = None
 ) -> tuple[Any, GraphState]:
 
@@ -33,7 +34,7 @@ def build_agent(
     ])
 
     planner: PlannerNode | StreamingPlannerNode = (
-        StreamingPlannerNode(llm, registry)
+        StreamingPlannerNode(llm, registry, on_token)
         if use_streaming
         else PlannerNode(llm, registry)
     )
