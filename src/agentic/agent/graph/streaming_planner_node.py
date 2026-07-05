@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 from langchain_core.messages import SystemMessage, AIMessage
 
@@ -16,13 +16,21 @@ class StreamingPlannerNode(Node):
 
     _SYSTEM = PlannerNode._SYSTEM
 
-    def __init__(self, llm: Any, registry: ToolRegistry) -> None:
-        self._llm    = llm
-        self._system = SystemMessage(
+    def __init__(
+        self,
+        llm: Any,
+        registry: ToolRegistry,
+        on_token: Optional[Any] = None,  # async callable(str) -> None
+    ) -> None:
+        from langchain_core.messages import SystemMessage
+        self._llm      = llm
+        self._on_token = on_token
+        self._system   = SystemMessage(
             content=self._SYSTEM.format(tools=registry.descriptions())
         )
 
     async def __call__(self, gs: GraphState) -> GraphState:
+        from langchain_core.messages import AIMessage
 
         state = self._unpack(gs)
         lc_messages = [self._system, *state.conversation.to_langchain()]
@@ -31,8 +39,8 @@ class StreamingPlannerNode(Node):
         async for chunk in self._llm.astream(lc_messages):
             chunks.append(chunk)
             if hasattr(chunk, "content") and chunk.content:
-                print(chunk.content, end="", flush=True)
-        print()
+                if self._on_token is not None:
+                    await self._on_token(chunk.content)
 
         last: AIMessage = chunks[-1] if chunks else AIMessage(content="")
         raw_tcs = getattr(last, "tool_calls", None) or []
