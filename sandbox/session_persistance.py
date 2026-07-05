@@ -1,0 +1,33 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+from langgraph.checkpoint.memory import MemorySaver
+
+from src.agentic.agent.build_agent import build_agent
+from src.agentic.agent.enum.role import Role
+from src.agentic.agent.schema.agent_state import AgentState
+from src.agentic.agent.schema.conversation_message import ConversationMessage
+from src.agentic.agent.service.state_serialization import _unpack, _pack
+
+app = FastAPI()
+checkpointer = MemorySaver()   # swap for AsyncSqliteSaver.from_conn_string("checkpoints.db") to persist across restarts
+graph, _ = build_agent(llm=my_llm, database=my_db, checkpointer=checkpointer)
+
+
+class ChatRequest(BaseModel):
+    session_id: str
+    message: str
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    config = {"configurable": {"thread_id": req.session_id}}
+
+    snapshot = await graph.aget_state(config)
+    state = _unpack(snapshot.values) if snapshot.values else AgentState(session_id=req.session_id)
+
+    state.conversation.append(ConversationMessage(role=Role.USER, content=req.message))
+
+    result_gs = await graph.ainvoke(_pack(state), config=config)
+    result = _unpack(result_gs)
+
+    return {"answer": result.final_answer, "iteration": result.iteration}
