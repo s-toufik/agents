@@ -21,6 +21,8 @@ from agentic.infrastructure.logger.adapter.loguru_logger import LoguruLogger
 from agentic.infrastructure.logger.port.logger import Logger
 
 logger: Logger = LoguruLogger()
+
+
 def load_application_configuration() -> AppConfiguration:
     dotenv.load_dotenv()
     run_type_environment: RunTypeEnvironment = RunTypeEnvironment(os.getenv("APP_ENV", "dev"))

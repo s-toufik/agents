@@ -4,12 +4,14 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from src.agentic.agent.build_agent import build_agent
 from src.agentic.agent.enum.role import Role
-from src.agentic.agent.schema.agent_state import AgentState
-from src.agentic.agent.schema.conversation_message import ConversationMessage
+from agentic.agent.graph.schema.agent_state import AgentState
+from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from src.agentic.agent.service.state_serialization import _unpack, _pack
 
 app = FastAPI()
-checkpointer = MemorySaver()   # swap for AsyncSqliteSaver.from_conn_string("checkpoints.db") to persist across restarts
+checkpointer = (
+    MemorySaver()
+)  # swap for AsyncSqliteSaver.from_conn_string("checkpoints.db") to persist across restarts
 graph, _ = build_agent(llm=my_llm, database=my_db, checkpointer=checkpointer)
 
 

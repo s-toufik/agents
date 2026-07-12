@@ -5,14 +5,15 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 from agentic.infrastructure.http.adapter.httpx.httpx_factory import HttpxFactory
 
+
 async def main():
     client = HttpxFactory().instance_async_http_client
 
     llm = ChatOpenAI(
         base_url="http://nautilus:1234/v1",
         api_key="lm_studio",
-        model="gpt-oss-20b",
-        http_async_client=client
+        model="mistralai/ministral-3-14b-reasoning",
+        http_async_client=client,
     )
 
     # 🧠 memory container
@@ -37,6 +38,7 @@ async def main():
 
         # store assistant response
         messages.append(AIMessage(content=response.content))
+
 
 if __name__ == "__main__":
     asyncio.run(main())

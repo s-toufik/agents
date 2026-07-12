@@ -11,19 +11,19 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from agentic.agent.enum.role import Role
 from agentic.agent.graph.agent_graph import AgentGraph
-from agentic.agent.graph.execution_node import ExecutorNode
-from agentic.agent.graph.feedback_node import FeedbackNode
-from agentic.agent.graph.final_node import FinalNode
-from agentic.agent.graph.memory_node import MemoryNode
-from agentic.agent.graph.reflection_node import ReflectionNode
-from agentic.agent.graph.router_node import RouterNode
-from agentic.agent.graph.streaming_planner_node import StreamingPlannerNode
-from agentic.agent.schema.agent_state import AgentState
-from agentic.agent.schema.conversation_message import ConversationMessage
+from agentic.agent.graph.node.execution_node import ExecutorNode
+from agentic.agent.graph.node.feedback_node import FeedbackNode
+from agentic.agent.graph.node.final_node import FinalNode
+from agentic.agent.graph.node.memory_node import MemoryNode
+from agentic.agent.graph.node.reflection_node import ReflectionNode
+from agentic.agent.graph.node.router_node import RouterNode
+from agentic.agent.graph.node.streaming_planner_node import StreamingPlannerNode
+from agentic.agent.graph.schema.agent_state import AgentState
+from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.agent.service.state_serialization import _unpack, _pack
-from agentic.agent.tools.python_tool_capability import PythonToolCapability
-from agentic.agent.tools.sql_tool_capability import SQLToolCapability
-from agentic.agent.tools.tool_registery import ToolRegistry
+from agentic.agent.tool.python_tool_capability import PythonToolCapability
+from agentic.agent.tool.sql_tool_capability import SQLToolCapability
+from agentic.agent.tool.tool_registery import ToolRegistry
 
 _current_queue: contextvars.ContextVar[asyncio.Queue] = contextvars.ContextVar("current_queue")
 
@@ -36,13 +36,15 @@ async def on_token(tok: str) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    my_llm = ...    # your real ChatModel instance
-    my_db = ...     # your real DB adapter
+    my_llm = ...  # your real ChatModel instance
+    my_db = ...  # your real DB adapter
 
-    registry = ToolRegistry([
-        SQLToolCapability(my_db, default_dialect="oracle"),
-        PythonToolCapability(),
-    ])
+    registry = ToolRegistry(
+        [
+            SQLToolCapability(my_db, default_dialect="oracle"),
+            PythonToolCapability(),
+        ]
+    )
 
     app.state.checkpointer = MemorySaver()  # swap for AsyncSqliteSaver for durability
     app.state.graph = AgentGraph(
@@ -59,6 +61,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
 
 @app.post("/session/start")
 async def start_session():
