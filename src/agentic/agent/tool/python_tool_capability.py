@@ -5,14 +5,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from agentic.agent.schema.python_tool_input import PythonToolInput
-from agentic.agent.schema.tool_result import ToolResult
-from agentic.agent.tools.tool_capabilities import ToolCapability
+from agentic.agent.tool.schema.tool_result import ToolResult
+from agentic.agent.tool.schema.python_tool_input import PythonToolInput
+from agentic.agent.tool.tool_capabilities import ToolCapability
 
 
 class PythonToolCapability(ToolCapability):
-
-    _TIMEOUT:    int = 10
+    _TIMEOUT: int = 10
     _MAX_OUTPUT: int = 4_000
 
     @property
@@ -27,9 +26,13 @@ class PythonToolCapability(ToolCapability):
     def args_schema(self) -> type[BaseModel]:
         return PythonToolInput
 
+    @classmethod
+    def schema(cls) -> dict[str, Any]:
+        return {"name": cls.name, "description": cls.description, "parameters": cls.args_schema}
+
     async def execute(self, **kwargs: Any) -> ToolResult:
         call_id: str = kwargs.pop("_call_id", "")
-        code:    str = kwargs.get("code", "").strip()
+        code: str = kwargs.get("code", "").strip()
 
         if not code:
             return ToolResult(id=call_id, output="", error="No code provided.")
@@ -44,17 +47,15 @@ class PythonToolCapability(ToolCapability):
 
             try:
                 proc = await asyncio.create_subprocess_exec(
-                    "python3", tmp_path,
+                    "python3",
+                    tmp_path,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                stdout, stderr = await asyncio.wait_for(
-                    proc.communicate(), timeout=self._TIMEOUT
-                )
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=self._TIMEOUT)
             except asyncio.TimeoutError:
                 return ToolResult(
-                    id=call_id, output="",
-                    error=f"Execution timed out after {self._TIMEOUT}s."
+                    id=call_id, output="", error=f"Execution timed out after {self._TIMEOUT}s."
                 )
         finally:
             if tmp_path and os.path.exists(tmp_path):

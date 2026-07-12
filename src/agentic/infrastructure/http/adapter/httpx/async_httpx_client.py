@@ -4,7 +4,6 @@ from httpx import AsyncClient
 
 
 class AsyncHttpxClient:
-
     def __init__(self, client: AsyncClient) -> None:
         self._client = client
 

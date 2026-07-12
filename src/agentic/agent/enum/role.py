@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Role(str, Enum):
-    USER      = "user"
+    USER = "user"
     ASSISTANT = "assistant"
-    TOOL      = "tool"
-    SYSTEM    = "system"
+    TOOL = "tool"
+    SYSTEM = "system"

@@ -8,8 +8,7 @@ from agentic.infrastructure.http.port.http_client_factory import HttpClientFacto
 
 
 class HttpxFactory:
-
-    def __init__(self, factory_params: Optional[HttpClientFactoryParams] = None)  -> None:
+    def __init__(self, factory_params: Optional[HttpClientFactoryParams] = None) -> None:
         self._factory_params = factory_params or HttpClientFactoryParams()
 
     def create_async_http_client(self) -> AsyncHttpClient:
@@ -28,8 +27,4 @@ class HttpxFactory:
             retries=self._factory_params.retry_policy.retry_count,
         )
 
-        return AsyncClient(
-            timeout=timeout,
-            limits=limits,
-            transport=transport
-        )
+        return AsyncClient(timeout=timeout, limits=limits, transport=transport)
