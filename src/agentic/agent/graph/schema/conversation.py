@@ -10,7 +10,7 @@ from langchain_core.messages import (
     BaseMessage,
 )
 
-from agentic.agent.tool.schema.tool_call import ToolCall
+from agentic.agent.graph.schema.tool_call import ToolCall
 
 
 class Conversation:

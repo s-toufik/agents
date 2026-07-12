@@ -5,7 +5,7 @@ from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.agent.graph.schema.graph_state import GraphState
 from agentic.agent.graph.schema.planner_decision import PlannerDecision
 from agentic.agent.graph.schema.reflection_decision import ReflectionDecision
-from agentic.agent.tool.schema.tool_call import ToolCall
+from agentic.agent.graph.schema.tool_call import ToolCall
 
 
 def _pack(state: AgentState) -> GraphState:

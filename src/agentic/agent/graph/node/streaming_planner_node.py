@@ -11,7 +11,7 @@ from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.agent.graph.schema.graph_state import GraphState
 from agentic.agent.graph.schema.planner_decision import PlannerDecision
 from agentic.agent.service.prompt_service import PromptService
-from agentic.agent.tool.schema.tool_call import ToolCall
+from agentic.agent.graph.schema.tool_call import ToolCall
 from agentic.agent.tool.tool_registery import ToolRegistry
 
 

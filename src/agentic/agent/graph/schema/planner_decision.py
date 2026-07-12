@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from agentic.agent.tool.schema.tool_call import ToolCall
+from agentic.agent.graph.schema.tool_call import ToolCall
 
 
 class PlannerDecision(BaseModel):

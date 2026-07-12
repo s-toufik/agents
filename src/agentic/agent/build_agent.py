@@ -11,9 +11,10 @@ from agentic.agent.graph.node.router_node import RouterNode
 from agentic.agent.graph.node.streaming_planner_node import StreamingPlannerNode
 from agentic.agent.graph.schema.agent_state import AgentState
 from agentic.agent.graph.schema.graph_state import GraphState
+from agentic.agent.service.prompt_service import PromptService
 from agentic.agent.service.state_serialization import _pack
-from agentic.agent.tool.python_tool_capability import PythonToolCapability
-from agentic.agent.tool.sql_tool_capability import SQLToolCapability
+from agentic.agent.tool.code.python_tool_capability import PythonToolCapability
+from agentic.agent.tool.sql.sql_tool_capability import SQLToolCapability
 from agentic.agent.tool.tool_registery import ToolRegistry
 
 
@@ -36,9 +37,9 @@ def build_agent(
     )
 
     planner: PlannerNode | StreamingPlannerNode = (
-        StreamingPlannerNode(llm, registry, on_token)
+        StreamingPlannerNode(llm, registry, PromptService(), on_token)
         if use_streaming
-        else PlannerNode(llm, registry)
+        else PlannerNode(llm, registry, PromptService())
     )
 
     graph = AgentGraph(
@@ -46,8 +47,8 @@ def build_agent(
         router=RouterNode(),
         executor=ExecutorNode(registry),
         memory=MemoryNode(max_tokens=max_tokens),
-        reflection=ReflectionNode(llm),
-        feedback=FeedbackNode(),
+        reflection=ReflectionNode(llm, PromptService()),
+        feedback=FeedbackNode(PromptService()),
         final=FinalNode(),
     ).build(checkpointer=checkpointer)
 

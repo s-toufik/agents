@@ -32,6 +32,7 @@ class AgentGraph:
         self._feedback = feedback
         self._final = final
 
+    # noinspection PyTypeChecker
     def build(self, checkpointer: Any = None) -> Any:
         graph = StateGraph(GraphState)
         graph.add_node("planner", self._planner)

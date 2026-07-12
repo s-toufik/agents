@@ -5,7 +5,7 @@ from agentic.agent.graph.node.node import Node
 from agentic.agent.graph.schema.agent_state import AgentState
 from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.agent.graph.schema.graph_state import GraphState
-from agentic.agent.tool.schema.tool_call import ToolCall
+from agentic.agent.graph.schema.tool_call import ToolCall
 from agentic.agent.tool.schema.tool_result import ToolResult
 from agentic.agent.tool.tool_registery import ToolRegistry
 

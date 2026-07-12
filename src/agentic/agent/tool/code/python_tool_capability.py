@@ -32,7 +32,7 @@ class PythonToolCapability(ToolCapability):
 
     async def execute(self, **kwargs: Any) -> ToolResult:
         call_id: str = kwargs.pop("_call_id", "")
-        code: str = kwargs.get("code", "").strip()
+        code: str = kwargs.get("", "").strip()
 
         if not code:
             return ToolResult(id=call_id, output="", error="No code provided.")

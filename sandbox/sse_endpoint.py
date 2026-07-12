@@ -21,8 +21,8 @@ from agentic.agent.graph.node.streaming_planner_node import StreamingPlannerNode
 from agentic.agent.graph.schema.agent_state import AgentState
 from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.agent.service.state_serialization import _unpack, _pack
-from agentic.agent.tool.python_tool_capability import PythonToolCapability
-from agentic.agent.tool.sql_tool_capability import SQLToolCapability
+from agentic.agent.tool.code.python_tool_capability import PythonToolCapability
+from agentic.agent.tool.sql.sql_tool_capability import SQLToolCapability
 from agentic.agent.tool.tool_registery import ToolRegistry
 
 _current_queue: contextvars.ContextVar[asyncio.Queue] = contextvars.ContextVar("current_queue")
