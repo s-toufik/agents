@@ -2,14 +2,12 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from agentic.agent.schema.tool_call import ToolCall
+from agentic.agent.tool.schema.tool_call import ToolCall
 
 
 class PlannerDecision(BaseModel):
-
     tool_calls: list[ToolCall] = Field(default_factory=list)
     answer: Optional[str] = None
-    notes: Optional[str] = None
 
     @property
     def wants_tools(self) -> bool:
