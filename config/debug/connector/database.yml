@@ -3,13 +3,24 @@ connector:
     name: postgres
     type: database
     engine: postgres_sql
-    host: ${oc.env:DB_HOST}
+    host: ${oc.env:POSTGRE_DB_HOST}
     port: 5432
-    default_name: ${oc.env:DB_NAME}
+    default_name: ${oc.env:POSTGRE_DB_NAME}
     pool:
       min: 2
       max: 10
     auth:
       type: basic
-      username: ${oc.env:DB_USER}
-      password: ${oc.env:DB_PASSWORD}
+      username: ${oc.env:POSTGRE_DB_USER}
+      password: ${oc.env:POSTGRE_DB_PASSWORD}
+
+  sqlite:
+    name: sqlite
+    type: database
+    engine: sqlite
+    host: ${oc.env:SQLITE_DB_HOST}
+    port: 0
+    default_name: ${oc.env:SQLITE_DB_NAME}
+    pool: {}
+    auth:
+      type: none

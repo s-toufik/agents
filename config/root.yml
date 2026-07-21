@@ -9,6 +9,7 @@ app_configuration:
       local_fs: ${connector.local_fs}
     database:
       postgres: ${connector.postgres}
+      sqlite: ${connector.sqlite}
     telemetry:
       open_telemetry: ${connector.telemetry}
 
