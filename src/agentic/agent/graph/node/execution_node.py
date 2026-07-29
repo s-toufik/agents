@@ -41,10 +41,17 @@ class ExecutorNode(Node):
     async def _run(self, tool_call: ToolCall) -> ToolResult:
         try:
             tool = self._tool_registry.get(tool_call.name)
-            return await tool.execute(_call_id=tool_call.id, **tool_call.args)
+            request = tool.args_schema(**tool_call.args)
+            request.call_id = tool_call.id
+            return await tool.execute(request)
         except KeyError:
             return ToolResult(
-                id=tool_call.id, output="", error=f"Unknown tool: '{tool_call.name}'."
+                tool_name=tool_call.name,
+                id=tool_call.id,
+                output="",
+                error=f"Unknown tool: '{tool_call.name}'.",
             )
-        except Exception as exc:  # noqa: BLE001
-            return ToolResult(id=tool_call.id, output="", error=str(exc))
+        except Exception as exception:
+            return ToolResult(
+                tool_name=tool_call.name, id=tool_call.id, output="", error=str(exception)
+            )

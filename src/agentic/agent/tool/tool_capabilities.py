@@ -1,26 +1,19 @@
-from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
+from mypy.types import TypeVar
 from pydantic import BaseModel
 
 from agentic.agent.tool.schema.tool_result import ToolResult
 
+T = TypeVar("T")
 
-class ToolCapability(ABC):
-    @property
-    @abstractmethod
-    def name(self) -> str: ...
 
-    @property
-    @abstractmethod
-    def description(self) -> str: ...
-
-    @property
-    @abstractmethod
-    def args_schema(self) -> type[BaseModel]: ...
+class ToolCapability(Protocol):
+    name: str
+    description: str
+    args_schema: type[BaseModel]
 
     @classmethod
     def schema(cls) -> dict[str, Any]: ...
 
-    @abstractmethod
-    async def execute(self, **kwargs: Any) -> ToolResult: ...
+    async def execute(self, request: T) -> ToolResult: ...

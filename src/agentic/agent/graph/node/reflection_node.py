@@ -25,7 +25,7 @@ class ReflectionNode(Node):
 
         lc_messages: list[BaseMessage] = [
             SystemMessage(
-                content=self._prompt_service.feedback_system_prompt(
+                content=self._prompt_service.reflection_system_prompt(
                     ReflectionDecision.model_json_schema()
                 )
             ),

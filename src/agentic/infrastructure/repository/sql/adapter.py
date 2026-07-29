@@ -1,26 +1,11 @@
 from typing import cast
-from sqlglot import parse, ErrorLevel, Expr, errors, exp
+from sqlglot import parse, ErrorLevel, Expr, errors
 
-FORBIDDEN_STATEMENTS = (
-    exp.Insert,
-    exp.Update,
-    exp.Delete,
-    exp.Create,
-    exp.Drop,
-    exp.Alter,
-    exp.TruncateTable,
-    exp.Merge,
-    exp.Transaction,
-    exp.Commit,
-    exp.Rollback,
-    exp.Attach,
-    exp.Detach,
-)
+from agentic.infrastructure.repository.sql_handler import FORBIDDEN_STATEMENTS, DEFAULT_DIALECT
 
 
 class SQLExpressionHandler:
-
-    def __init__(self, expression: str, dialect: str = "sqlite"):
+    def __init__(self, expression: str, dialect: str = DEFAULT_DIALECT) -> None:
         self._expression = expression
         self._dialect = dialect
 
@@ -38,9 +23,7 @@ class SQLExpressionHandler:
             return cast(list[Expr], expressions)
 
         except errors.SqlglotError as exception:
-            raise ValueError(
-                f"Invalid SQL: {exception}"
-            ) from exception
+            raise ValueError(f"Invalid SQL: {exception}") from exception
 
     def validate_read_only(self, expressions: list[Expr] | None = None):
         expressions = expressions or self.parse()
@@ -48,16 +31,11 @@ class SQLExpressionHandler:
         for expression in expressions:
             for node in expression.walk():
                 if isinstance(node, FORBIDDEN_STATEMENTS):
-                    raise ValueError(
-                        f"{type(node).__name__} is not allowed"
-                    )
+                    raise ValueError(f"{type(node).__name__} is not allowed")
 
     def transpile(self, expressions: list[Expr] | None = None) -> str:
         expressions = expressions or self.parse()
 
         self.validate_read_only(expressions)
 
-        return ";\n".join(
-            expression.sql(dialect="sqlite")
-            for expression in expressions
-        )
+        return ";\n".join(expression.sql(dialect=self._dialect) for expression in expressions)

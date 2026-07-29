@@ -1,71 +1,57 @@
-import asyncio
-import os
-import tempfile
-from typing import Any
+from typing import Any, Optional, cast
 
 from pydantic import BaseModel
 
 from agentic.agent.tool.schema.tool_result import ToolResult
 from agentic.agent.tool.schema.python_tool_input import PythonToolInput
-from agentic.agent.tool.tool_capabilities import ToolCapability
+from agentic.infrastructure.code_sandbox.code import CodeFactory, Code, CodeStdout
+from agentic.infrastructure.logger.port.logger import Logger
+from agentic.infrastructure.code_sandbox.python.adapter import _ALLOWLIST
 
 
-class PythonToolCapability(ToolCapability):
-    _TIMEOUT: int = 10
-    _MAX_OUTPUT: int = 4_000
+class PythonToolCapability:
+    timeout: int = 10
+    max_memory_mb: int = 256
 
-    @property
-    def name(self) -> str:
-        return "python_executor"
+    name: str = "python_executor"
+    description: str = f"Execute Python for data analysis or computation. Allowed modules: {', '.join(_ALLOWLIST)}. Assign your final value to `result`. Hard timeout: {timeout}s."
+    args_schema: type[BaseModel] = PythonToolInput
 
-    @property
-    def description(self) -> str:
-        return "Execute Python code in a sandboxed subprocess. Returns stdout."
+    def __init__(self, code_factory: CodeFactory, logger: Optional[Logger] = None) -> None:
+        self._code_factory = code_factory
+        self._set_logging(logger)
 
-    @property
-    def args_schema(self) -> type[BaseModel]:
-        return PythonToolInput
+    def _set_logging(self, logger: Logger | None) -> None:
+        if logger is None:
+            import logging
+
+            self._logger: Logger = cast(Logger, logging.getLogger(__name__))
+        else:
+            self._logger: Logger = logger
 
     @classmethod
     def schema(cls) -> dict[str, Any]:
-        return {"name": cls.name, "description": cls.description, "parameters": cls.args_schema}
+        return {
+            "name": cls.name,
+            "description": cls.description.format(
+                allow_list=", ".join(_ALLOWLIST), timeout=cls.timeout
+            ),
+            "parameters": cls.args_schema.model_json_schema(),
+        }
 
-    async def execute(self, **kwargs: Any) -> ToolResult:
-        call_id: str = kwargs.pop("_call_id", "")
-        code: str = kwargs.get("", "").strip()
+    async def execute(self, request: PythonToolInput) -> ToolResult:
+        call_id: str = request.call_id or ""
+        code: str = request.code
 
         if not code:
-            return ToolResult(id=call_id, output="", error="No code provided.")
+            return ToolResult(tool_name=self.name, id=call_id, output="", error="No code provided.")
 
-        tmp_path: str | None = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".py", delete=False, encoding="utf-8"
-            ) as tmp:
-                tmp.write(code)
-                tmp_path = tmp.name
+        code_executor_proc: Code = self._code_factory(
+            code=code, code_template=None, code_timeout=self.timeout, max_memory_mb=self.max_memory_mb
+        )
 
-            try:
-                proc = await asyncio.create_subprocess_exec(
-                    "python3",
-                    tmp_path,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=self._TIMEOUT)
-            except asyncio.TimeoutError:
-                return ToolResult(
-                    id=call_id, output="", error=f"Execution timed out after {self._TIMEOUT}s."
-                )
-        finally:
-            if tmp_path and os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+        code_result: CodeStdout = await code_executor_proc.execute()
 
-        out = stdout.decode("utf-8", errors="replace").strip()
-        err = stderr.decode("utf-8", errors="replace").strip()
-
-        if proc.returncode != 0:
-            return ToolResult(id=call_id, output="", error=err or "Non-zero exit code.")
-
-        output = (out + (f"\nSTDERR:\n{err}" if err else "") or "(no output)")[: self._MAX_OUTPUT]
-        return ToolResult(id=call_id, output=output)
+        return ToolResult(
+            tool_name=self.name, id=call_id, output=code_result.stdout, error=code_result.stderr
+        )

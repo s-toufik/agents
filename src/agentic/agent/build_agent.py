@@ -13,15 +13,12 @@ from agentic.agent.graph.schema.agent_state import AgentState
 from agentic.agent.graph.schema.graph_state import GraphState
 from agentic.agent.service.prompt_service import PromptService
 from agentic.agent.service.state_serialization import _pack
-from agentic.agent.tool.code.python_tool_capability import PythonToolCapability
-from agentic.agent.tool.sql.sql_tool_capability import SQLToolCapability
 from agentic.agent.tool.tool_registery import ToolRegistry
 
 
 def build_agent(
     llm: Any,
-    database: Any,
-    sql_dialect: str = "oracle",
+    tool_registry: ToolRegistry,
     max_tokens: int = 8_000,
     max_iterations: int = 6,
     use_streaming: bool = False,
@@ -29,23 +26,16 @@ def build_agent(
     checkpointer: Any = None,
 ) -> tuple[Any, GraphState]:
 
-    registry = ToolRegistry(
-        [
-            SQLToolCapability(database, default_dialect=sql_dialect),
-            PythonToolCapability(),
-        ]
-    )
-
     planner: PlannerNode | StreamingPlannerNode = (
-        StreamingPlannerNode(llm, registry, PromptService(), on_token)
+        StreamingPlannerNode(llm, tool_registry, PromptService(), on_token)
         if use_streaming
-        else PlannerNode(llm, registry, PromptService())
+        else PlannerNode(llm, tool_registry, PromptService())
     )
 
     graph = AgentGraph(
         planner=planner,
         router=RouterNode(),
-        executor=ExecutorNode(registry),
+        executor=ExecutorNode(tool_registry),
         memory=MemoryNode(max_tokens=max_tokens),
         reflection=ReflectionNode(llm, PromptService()),
         feedback=FeedbackNode(PromptService()),

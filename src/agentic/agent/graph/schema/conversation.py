@@ -1,4 +1,4 @@
-from typing import Any, Optional, Mapping, Callable
+from typing import Any, Optional, Mapping, Callable, TypeVar, Protocol, Type
 
 from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.agent.enum.role import Role
@@ -11,6 +11,12 @@ from langchain_core.messages import (
 )
 
 from agentic.agent.graph.schema.tool_call import ToolCall
+
+T = TypeVar("T")
+
+
+class Handler(Protocol[T]):
+    def __call__(self, __msg: T) -> ConversationMessage: ...
 
 
 class Conversation:
@@ -39,14 +45,34 @@ class Conversation:
         return Conversation(list(self.messages))
 
     def to_langchain(self) -> list[BaseMessage]:
-        return [self._TO_LANGCHAIN_DISPATCHER[message.role](message) for message in self.messages]
+        return [self.to_langchain_dispatcher[message.role](message) for message in self.messages]
+
+    @property
+    def to_langchain_dispatcher(
+        self,
+    ) -> Mapping[Role, Callable[[ConversationMessage], BaseMessage]]:
+        return {
+            Role.USER: self._to_human,
+            Role.ASSISTANT: self._to_assistant,
+            Role.TOOL: self._to_tool,
+            Role.SYSTEM: self._to_system,
+        }
 
     @classmethod
     def from_langchain(cls, lc_messages: list[Any]) -> "Conversation":
         messages: list[ConversationMessage] = [
-            cls._FROM_LANGCHAIN_DISPATCHER[type(message)](message) for message in lc_messages
+            cls().from_langchain_dispatcher[type(message)](message) for message in lc_messages
         ]
         return cls(messages)
+
+    @property
+    def from_langchain_dispatcher(self) -> Mapping[Type[BaseMessage], Handler[BaseMessage]]:
+        return {
+            HumanMessage: self._from_human,
+            AIMessage: self._from_assistant,
+            ToolMessage: self._from_tool,
+            SystemMessage: self._from_system,
+        }
 
     @staticmethod
     def _to_system(message: ConversationMessage) -> SystemMessage:
@@ -73,30 +99,23 @@ class Conversation:
     def _to_human(message: ConversationMessage) -> HumanMessage:
         return HumanMessage(content=message.content)
 
-    _TO_LANGCHAIN_DISPATCHER: Mapping[Role, Callable[[ConversationMessage], BaseMessage]] = {
-        Role.USER: _to_human,
-        Role.ASSISTANT: _to_assistant,
-        Role.TOOL: _to_tool,
-        Role.SYSTEM: _to_system,
-    }
+    @staticmethod
+    def _from_system(message: SystemMessage) -> ConversationMessage:
+        return ConversationMessage(role=Role.SYSTEM, content=str(message.content) or "")
 
-    @classmethod
-    def _from_system(cls, message: SystemMessage) -> ConversationMessage:
-        return ConversationMessage(role=Role.SYSTEM, content=message.content.__repr__() or "")
-
-    @classmethod
-    def _from_tool(cls, message: ToolMessage) -> ConversationMessage:
+    @staticmethod
+    def _from_tool(message: ToolMessage) -> ConversationMessage:
         return ConversationMessage(
             role=Role.TOOL,
-            content=message.content.__repr__() or "",
+            content=str(message.content) or "",
             tool_call_id=message.tool_call_id,
         )
 
-    @classmethod
-    def _from_assistant(cls, message: AIMessage) -> ConversationMessage:
+    @staticmethod
+    def _from_assistant(message: AIMessage) -> ConversationMessage:
         return ConversationMessage(
             role=Role.ASSISTANT,
-            content=message.content.__repr__() or "",
+            content=str(message.content) or "",
             tool_calls=[
                 ToolCall(
                     id=tool_call_["id"], name=tool_call_["name"], args=tool_call_.get("args", {})
@@ -105,15 +124,6 @@ class Conversation:
             ],
         )
 
-    @classmethod
-    def _from_human(cls, message: HumanMessage) -> ConversationMessage:
-        return ConversationMessage(role=Role.USER, content=message.content.__repr__() or "")
-
-    _FROM_LANGCHAIN_DISPATCHER: Mapping[
-        BaseMessage, Callable[[BaseMessage], ConversationMessage]
-    ] = {
-        HumanMessage: _from_human,
-        AIMessage: _from_assistant,
-        ToolMessage: _from_assistant,
-        SystemMessage: _from_system,
-    }
+    @staticmethod
+    def _from_human(message: HumanMessage) -> ConversationMessage:
+        return ConversationMessage(role=Role.USER, content=str(message.content) or "")
