@@ -2,7 +2,7 @@ import uuid
 from typing import Any, Optional
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import SystemMessage, BaseMessage, AIMessage
+from langchain_core.messages import SystemMessage, BaseMessage, AIMessageChunk
 
 from agentic.agent.enum.role import Role
 from agentic.agent.graph.node.node import Node
@@ -32,22 +32,20 @@ class StreamingPlannerNode(Node):
     async def __call__(self, graph_state: GraphState) -> GraphState:
 
         state: AgentState = self._unpack(graph_state)
+
         lc_messages: list[BaseMessage] = [
             SystemMessage(content=self._prompt_service.planner_system_prompt()),
             *state.conversation.to_langchain(),
         ]
 
-        chunks: list[Any] = []
+        raw: AIMessageChunk = AIMessageChunk(content="") # type: ignore
         async for chunk in self._llm.bind_tools(self._tool_registry.descriptions()).astream(
             lc_messages
         ):
-            chunks.append(chunk)
-
+            raw += chunk
             if hasattr(chunk, "content") and chunk.content:
                 if self._on_token is not None:
                     await self._on_token(chunk.content)
-
-        raw: AIMessage = chunks[-1] if chunks else AIMessage(content="")
 
         tool_calls: list[ToolCall] = [
             ToolCall(
@@ -59,7 +57,7 @@ class StreamingPlannerNode(Node):
         ]
 
         decision = PlannerDecision(
-            tool_calls=tool_calls, answer=raw.content.__repr__() if not raw.tool_calls else None
+            tool_calls=tool_calls, answer=str(raw.content) if not raw.tool_calls else None
         )
 
         state.conversation.append(

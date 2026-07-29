@@ -28,6 +28,10 @@ from agentic.infrastructure.repository.sqlite.settings import SqliteSettings
 from agentic.infrastructure.app_configuration.enum.connector_type import ConnectorType
 
 
+async def on_token(token: str):
+    print(token, end="", flush=True)
+
+
 class ChatRequest(BaseModel):
     session_id: str
     message: str
@@ -63,7 +67,13 @@ async def main():
 
     checkpointer = MemorySaver()
 
-    graph, _ = build_agent(llm=llm, tool_registry=tool_registry, checkpointer=checkpointer)
+    graph, _ = build_agent(
+        llm=llm,
+        tool_registry=tool_registry,
+        checkpointer=checkpointer,
+        use_streaming=True,
+        on_token=on_token,
+    )
 
     print("Chat started (type 'exit' to quit)\n")
 

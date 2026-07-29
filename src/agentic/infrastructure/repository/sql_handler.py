@@ -20,7 +20,7 @@ FORBIDDEN_STATEMENTS = (
     exp.Detach,
 )
 
-DEFAULT_DIALECT = "oracle"
+DEFAULT_DIALECT = "sqlite"
 
 
 class SQLFactory(Protocol):

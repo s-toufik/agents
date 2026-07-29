@@ -9,9 +9,7 @@ from agentic.agent.graph.schema.conversation_message import ConversationMessage
 from src.agentic.agent.service.state_serialization import _unpack, _pack
 
 app = FastAPI()
-checkpointer = (
-    MemorySaver()
-)
+checkpointer = MemorySaver()
 graph, _ = build_agent(llm=my_llm, database=my_db, checkpointer=checkpointer)
 
 

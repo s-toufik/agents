@@ -91,7 +91,7 @@ class PromptService:
     
     # Evaluator Scope
     
-    Your sole responsibility is to evaluate the logical correctness and completeness of the assistant's final answer with respect to the user's original question.
+    Your sole responsibility is to evaluate the logical correctness and completeness of the assistant's final answer with respect to the user's original question. 
     
     The assistant may have used external tool (such as database inspection, web search, or file preview) to gather information.
     
@@ -173,4 +173,4 @@ class PromptService:
 
     @staticmethod
     def feedback_system_prompt(critique: str):
-        return PromptService._FEEDBACK_SYSTEM_PROMPT.format(critique=critique)
+        return PromptService._FEEDBACK_SYSTEM_PROMPT.format(critiques=critique)

@@ -44,7 +44,7 @@ class PlannerNode(Node):
         ]
 
         decision: PlannerDecision = PlannerDecision(
-            tool_calls=tool_calls, answer=raw.content.__repr__() if not raw.tool_calls else None
+            tool_calls=tool_calls, answer=str(raw.content) if not raw.tool_calls else None
         )
 
         state.conversation.append(

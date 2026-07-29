@@ -47,7 +47,10 @@ class PythonToolCapability:
             return ToolResult(tool_name=self.name, id=call_id, output="", error="No code provided.")
 
         code_executor_proc: Code = self._code_factory(
-            code=code, code_template=None, code_timeout=self.timeout, max_memory_mb=self.max_memory_mb
+            code=code,
+            code_template=None,
+            code_timeout=self.timeout,
+            max_memory_mb=self.max_memory_mb,
         )
 
         code_result: CodeStdout = await code_executor_proc.execute()
