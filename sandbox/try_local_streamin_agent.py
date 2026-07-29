@@ -2,7 +2,6 @@ import asyncio
 from pprint import pprint
 
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from pydantic import BaseModel
 
