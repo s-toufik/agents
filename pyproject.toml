@@ -19,6 +19,7 @@ license = "MIT"
 dependencies = [
     "ipykernel>=7.3.0",
     "numpy",
+    "matplotlib",
     "python-dotenv",
     "fastapi",
     "uvicorn[standard]",
