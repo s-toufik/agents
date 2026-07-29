@@ -12,7 +12,7 @@ async def main():
     llm = ChatOpenAI(
         base_url="http://nautilus:1234/v1",
         api_key="lm_studio",
-        model="mistralai/ministral-3-14b-reasoning",
+        model="google/gemma-3-1b",
         http_async_client=client,
     )
 

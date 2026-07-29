@@ -11,7 +11,7 @@ from src.agentic.agent.service.state_serialization import _unpack, _pack
 app = FastAPI()
 checkpointer = (
     MemorySaver()
-)  # swap for AsyncSqliteSaver.from_conn_string("checkpoints.db") to persist across restarts
+)
 graph, _ = build_agent(llm=my_llm, database=my_db, checkpointer=checkpointer)
 
 
