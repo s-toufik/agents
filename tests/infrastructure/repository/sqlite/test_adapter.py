@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from agentic.infrastructure.repository.sqlite.adapter import SQLiteRepository
+from agentic_core.infrastructure.repository.sqlite.adapter import SQLiteRepository
 
 
 @pytest.fixture

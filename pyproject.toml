@@ -21,6 +21,7 @@ dependencies = [
     "numpy",
     "matplotlib",
     "python-dotenv",
+    "aiobreaker",
     "fastapi",
     "uvicorn[standard]",
     "uvloop",

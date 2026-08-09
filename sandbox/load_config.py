@@ -3,27 +3,29 @@ import dotenv
 from pathlib import Path
 from pprint import pprint
 
-from agentic.infrastructure.app_configuration.adapter.load_configuration import (
+from agentic_core.infrastructure.application_configuration.adapter.load_configuration import (
     LoadConfiguration,
 )
-from agentic.infrastructure.app_configuration.adapter.omega_configuration_reader import (
+from agentic_core.infrastructure.application_configuration.adapter import (
     OmegaConfigurationReader,
 )
-from agentic.infrastructure.app_configuration.enum.run_type_environment import (
+from agentic_core.infrastructure.application_configuration.enum.run_type_environment import (
     RunTypeEnvironment,
 )
-from agentic.infrastructure.app_configuration.model.configuration import AppConfiguration
-from agentic.infrastructure.app_configuration.port.configuration import Configuration
-from agentic.infrastructure.app_configuration.port.configuration_reader import (
+from agentic_core.infrastructure.application_configuration.model.configuration import (
+    ApplicationConfiguration,
+)
+from agentic_core.infrastructure.application_configuration.port.configuration import Configuration
+from agentic_core.infrastructure.application_configuration.port.configuration_reader import (
     ConfigurationReader,
 )
-from agentic.infrastructure.logger.adapter.loguru_logger import LoguruLogger
-from agentic.infrastructure.logger.port.logger import Logger
+from agentic_core.infrastructure.logger.adapter.loguru_logger import LoguruLogger
+from agentic_core.infrastructure.logger import Logger
 
 logger: Logger = LoguruLogger()
 
 
-def load_application_configuration() -> AppConfiguration:
+def load_application_configuration() -> ApplicationConfiguration:
     dotenv.load_dotenv()
     run_type_environment: RunTypeEnvironment = RunTypeEnvironment(os.getenv("APP_ENV", "dev"))
     configuration_directory: Path = Path(os.getenv("CONFIGURATION_DIR", ""))

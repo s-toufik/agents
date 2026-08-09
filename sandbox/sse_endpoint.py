@@ -12,28 +12,30 @@ from pydantic import BaseModel
 from langgraph.checkpoint.memory import MemorySaver
 from starlette.middleware.cors import CORSMiddleware
 
-from agentic.agent.build_agent import build_agent
-from agentic.agent.enum.role import Role
-from agentic.agent.graph.schema.agent_state import AgentState
+from agentic.adapter.outbound.agent.build_agent import build_agent
+from agentic.adapter.outbound.agent import Role
+from agentic.adapter.outbound.agent.graph import AgentState
 
-from agentic.agent.graph.schema.conversation_message import ConversationMessage
+from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
 
-from agentic.agent.service.state_serialization import _unpack, _pack
+from agentic.adapter.outbound.agent.service.state_serialization import unpack_state, pack_state
 
-from agentic.agent.tool.tool_registery import ToolRegistry
-from agentic.agent.tool.code.python_tool_capability import PythonToolCapability
-from agentic.agent.tool.sql.sql_tool_capability import SQLToolCapability
-from agentic.bootstrap.container import Container
-from agentic.infrastructure.app_configuration.enum.connector_type import ConnectorType
-from agentic.infrastructure.app_configuration.model.configuration import AppConfiguration
-from agentic.infrastructure.app_configuration.model.connector import DatabaseConnector
-from agentic.infrastructure.code_sandbox.python.factory import SafeCodeFactory
-from agentic.infrastructure.http.adapter.httpx.httpx_factory import HttpxFactory
-from agentic.infrastructure.repository.repository import RepositoryFactory, AsyncSQLRepository
-from agentic.infrastructure.repository.sql.factory import SQLHandlerFactory
-from agentic.infrastructure.repository.sqlite.factory import SQLiteRepositoryFactory
-from agentic.infrastructure.repository.sqlite.mapper import SettingsMapper
-from agentic.infrastructure.repository.sqlite.settings import SqliteSettings
+from agentic.adapter.outbound.agent import ToolRegistry
+from agentic.adapter.outbound.agent.tool.code.python_tool_capability import PythonToolCapability
+from agentic.adapter.outbound.agent.tool.sql.sql_tool_capability import SQLToolCapability
+from agentic_application.bootstrap.container import Container
+from agentic_core.infrastructure.application_configuration.enum.connector_type import ConnectorType
+from agentic_core.infrastructure.application_configuration.model.configuration import (
+    ApplicationConfiguration,
+)
+from agentic_core.infrastructure.application_configuration.model.connector import DatabaseConnector
+from agentic_core.infrastructure.runtime import SafeCodeFactory
+from agentic_core.infrastructure.http.adapter.httpx.factory import HttpxFactory
+from agentic_core.infrastructure.repository import RepositoryFactory, AsyncSQLRepository
+from agentic_core.infrastructure.repository.sql.factory import SQLHandlerFactory
+from agentic_core.infrastructure.repository.sqlite.factory import SQLiteRepositoryFactory
+from agentic_core.infrastructure.repository.sqlite.mapper import SqliteSettingsMapper
+from agentic_core.infrastructure.repository.sqlite import SqliteSettings
 
 _current_queue: contextvars.ContextVar[Optional[asyncio.Queue]] = contextvars.ContextVar(
     "current_queue", default=None
@@ -51,14 +53,14 @@ async def on_token(token: str):
 async def lifespan(app: FastAPI):
     container = Container()
     is_on, exception = await container.boot
-    configuration: AppConfiguration = container.application_configuration
+    configuration: ApplicationConfiguration = container.application_configuration
 
     sqlite_connector: DatabaseConnector = cast(
         DatabaseConnector, configuration.connector.get(ConnectorType.database).get("sqlite")
     )
-    sqlite_settings = SqliteSettings(SettingsMapper(sqlite_connector)())
+    sqlite_settings = SqliteSettings(SqliteSettingsMapper(sqlite_connector)())
     sqlite_factory: RepositoryFactory = SQLiteRepositoryFactory(sqlite_settings)
-    sqlite_repository: AsyncSQLRepository = await sqlite_factory.create_repository()
+    sqlite_repository: AsyncSQLRepository = await sqlite_factory.connect()
 
     client = HttpxFactory().instance_async_http_client
 
@@ -79,7 +81,7 @@ async def lifespan(app: FastAPI):
     checkpointer = MemorySaver()
 
     graph, _ = build_agent(
-        llm=llm,
+        planner_llm=llm,
         tool_registry=tool_registry,
         checkpointer=checkpointer,
         use_streaming=True,
@@ -122,7 +124,7 @@ async def chat_stream(request: ChatRequest):
     snapshot = await graph.aget_state(config)
 
     if snapshot.values:
-        state = _unpack(snapshot.values)
+        state = unpack_state(snapshot.values)
     else:
         state = AgentState(session_id=request.session_id)
 
@@ -135,12 +137,9 @@ async def chat_stream(request: ChatRequest):
         token = _current_queue.set(queue)
 
         try:
-            result = await graph.ainvoke(_pack(state), config=config)
-            final_state = _unpack(result)
-            print(
-                "FINAL STATE:",
-                final_state
-            )
+            result = await graph.ainvoke(pack_state(state), config=config)
+            final_state = unpack_state(result)
+            print("FINAL STATE:", final_state)
 
             await queue.put({"type": "final", "answer": final_state.final_answer})
 

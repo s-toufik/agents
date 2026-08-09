@@ -14,8 +14,8 @@ connector:
       username: ${oc.env:POSTGRE_DB_USER}
       password: ${oc.env:POSTGRE_DB_PASSWORD}
 
-  sqlite:
-    name: sqlite
+  users:
+    name: users_dash_bord
     type: database
     engine: sqlite
     host: ${oc.env:SQLITE_DB_HOST}
@@ -24,3 +24,14 @@ connector:
     pool: {}
     auth:
       type: none
+
+    checkpointer:
+      name: conversation_checkpointer
+      type: database
+      engine: sqlite
+      host: ${oc.env:CHECKPOINT_DB_HOST}
+      port: 0
+      default_name: ${oc.env:CHECKPOINT_DB_NAME}
+      pool: { }
+      auth:
+        type: none

@@ -1,7 +1,0 @@
-from typing import Union
-
-from agentic.infrastructure.authentication.model.basic_auth import BasicAuth
-from agentic.infrastructure.authentication.model.no_auth import NoAuth
-from agentic.infrastructure.authentication.model.token_auth import TokenAuth
-
-AuthTyping = Union[NoAuth, TokenAuth, BasicAuth]

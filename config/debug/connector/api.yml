@@ -1,27 +1,10 @@
 connector:
-  llm_gpt_oss_20b:
-    name: gpt-oss-20b
+  llm:
+    name: llm_provider
     type: api
     base_url: http://nautilus:1234/v1
     timeout: 5
     retry: 3
-    auth:
-      type: none
-
-  llm_ministral-3-14b-reasoning:
-    name: mistralai/ministral-3-14b-reasoning
-    type: api
-    base_url: http://nautilus:1234/v1
-    timeout: 5
-    retry: 3
-    auth:
-      type: none
-
-  llm_ministral-3-3b:
-    name: mistralai/ministral-3-3b
-    type: api
-    base_url: http://nautilus:1234/v1
-    timeout: 5
-    retry: 3
+    certificate: none
     auth:
       type: none

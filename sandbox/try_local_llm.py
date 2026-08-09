@@ -3,7 +3,7 @@ import asyncio
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage
 
-from agentic.infrastructure.http.adapter.httpx.httpx_factory import HttpxFactory
+from agentic_core.infrastructure.http.adapter.httpx.factory import HttpxFactory
 
 
 async def main():

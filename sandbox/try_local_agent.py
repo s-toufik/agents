@@ -2,30 +2,31 @@ import asyncio
 from pprint import pprint
 
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from pydantic import BaseModel
 
-from agentic.agent.enum.role import Role
-from agentic.agent.graph.schema.agent_state import AgentState
-from agentic.agent.graph.schema.conversation_message import ConversationMessage
-from agentic.agent.service.state_serialization import _unpack, _pack
-from agentic.agent.tool.code.python_tool_capability import PythonToolCapability
-from agentic.agent.tool.sql.sql_tool_capability import SQLToolCapability
-from agentic.agent.tool.tool_registery import ToolRegistry
-from agentic.bootstrap.container import Container
-from agentic.infrastructure.app_configuration.model.configuration import AppConfiguration
-from agentic.infrastructure.app_configuration.model.connector import DatabaseConnector
-from agentic.infrastructure.code_sandbox.python.factory import SafeCodeFactory
-from agentic.infrastructure.http.adapter.httpx.httpx_factory import HttpxFactory
-from agentic.infrastructure.repository.sql.factory import SQLHandlerFactory
-from src.agentic.agent.build_agent import build_agent
-from agentic.infrastructure.repository.repository import RepositoryFactory, AsyncSQLRepository
-from agentic.infrastructure.repository.sqlite.factory import SQLiteRepositoryFactory
-from agentic.infrastructure.repository.sqlite.mapper import SettingsMapper
+from agentic.adapter.outbound.agent import Role
+from agentic.adapter.outbound.agent.graph import AgentState
+from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
+from agentic.adapter.outbound.agent.service.state_serialization import unpack_state, pack_state
+from agentic.adapter.outbound.agent.tool.code.python_tool_capability import PythonToolCapability
+from agentic.adapter.outbound.agent.tool.sql.sql_tool_capability import SQLToolCapability
+from agentic.adapter.outbound.agent import ToolRegistry
+from agentic_application.bootstrap.container import Container
+from agentic_core.infrastructure.application_configuration.model.configuration import (
+    ApplicationConfiguration,
+)
+from agentic_core.infrastructure.application_configuration.model.connector import DatabaseConnector
+from agentic_core.infrastructure.runtime import SafeCodeFactory
+from agentic_core.infrastructure.http.adapter.httpx.factory import HttpxFactory
+from agentic_core.infrastructure.repository.sql.factory import SQLHandlerFactory
+from agentic.adapter.outbound.agent.build_agent import build_agent
+from agentic_core.infrastructure.repository import RepositoryFactory, AsyncSQLRepository
+from agentic_core.infrastructure.repository.sqlite.factory import SQLiteRepositoryFactory
+from agentic_core.infrastructure.repository.sqlite.mapper import SqliteSettingsMapper
 from typing import cast
-from agentic.infrastructure.repository.sqlite.settings import SqliteSettings
-from agentic.infrastructure.app_configuration.enum.connector_type import ConnectorType
+from agentic_core.infrastructure.repository.sqlite import SqliteSettings
+from agentic_core.infrastructure.application_configuration.enum.connector_type import ConnectorType
 
 
 class ChatRequest(BaseModel):
@@ -36,14 +37,14 @@ class ChatRequest(BaseModel):
 async def main():
     container = Container()
     is_on, exception = await container.boot
-    configuration: AppConfiguration = container.application_configuration
+    configuration: ApplicationConfiguration = container.application_configuration
 
     sqlite_connector: DatabaseConnector = cast(
         DatabaseConnector, configuration.connector.get(ConnectorType.database).get("sqlite")
     )
-    sqlite_settings = SqliteSettings(SettingsMapper(sqlite_connector)())
+    sqlite_settings = SqliteSettings(SqliteSettingsMapper(sqlite_connector)())
     sqlite_factory: RepositoryFactory = SQLiteRepositoryFactory(sqlite_settings)
-    sqlite_repository: AsyncSQLRepository = await sqlite_factory.create_repository()
+    sqlite_repository: AsyncSQLRepository = await sqlite_factory.connect()
 
     client = HttpxFactory().instance_async_http_client
 
@@ -63,7 +64,7 @@ async def main():
 
     checkpointer = MemorySaver()
 
-    graph, _ = build_agent(llm=llm, tool_registry=tool_registry, checkpointer=checkpointer)
+    graph, _ = build_agent(planner_llm=llm, tool_registry=tool_registry, checkpointer=checkpointer)
 
     print("Chat started (type 'exit' to quit)\n")
 
@@ -78,14 +79,16 @@ async def main():
 
         snapshot = await graph.aget_state(config)
         state = (
-            _unpack(snapshot.values) if snapshot.values else AgentState(session_id=req.session_id)
+            unpack_state(snapshot.values)
+            if snapshot.values
+            else AgentState(session_id=req.session_id)
         )
         state.iteration = 0
 
         state.conversation.append(ConversationMessage(role=Role.USER, content=req.message))
 
-        result_gs = await graph.ainvoke(_pack(state), config=config)
-        result = _unpack(result_gs)
+        result_gs = await graph.ainvoke(pack_state(state), config=config)
+        result = unpack_state(result_gs)
 
         pprint({"answer": result.final_answer, "iteration": result.iteration})
 
