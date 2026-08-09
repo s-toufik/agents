@@ -1,6 +1,6 @@
 from typing import cast, Optional
 
-from agentic_core.infrastructure.logger import Logger
+from agentic_core.infrastructure.logger.port.logger import Logger
 
 
 def create_logger(logger: Optional[Logger]) -> Logger:

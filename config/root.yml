@@ -4,14 +4,17 @@ app_configuration:
 
   connector:
     api:
-      llm_gpt_oss_20b: ${connector.llm_gpt_oss_20b}
+      llm: ${connector.llm}
     file:
       local_fs: ${connector.local_fs}
     database:
       postgres: ${connector.postgres}
-      sqlite: ${connector.sqlite}
+      users: ${connector.users}
+      checkpointer: ${connector.checkpointer}
     telemetry:
       open_telemetry: ${connector.telemetry}
 
   operation:
     gpt_oss_20b: ${operation.gpt_oss_20b}
+    ministral_3_14b_reasoning: ${operation.ministral_3_14b_reasoning}
+    ministral_3_3b: ${operation.ministral_3_3b}

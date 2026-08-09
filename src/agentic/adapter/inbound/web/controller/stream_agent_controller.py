@@ -10,7 +10,7 @@ from agentic.application.port.inbound.stream_agent_port import StramAgentPort
 from agentic.application.port.outbound.stream_events_port import StreamEventsPort
 from agentic.domain.model.agent_request import AgentRequest
 from agentic_core.infrastructure.http.context.request_id_context import request_id_context
-from agentic_core.infrastructure.logger import Logger
+from agentic_core.infrastructure.logger.port.logger import Logger
 
 
 class StreamAgentController:

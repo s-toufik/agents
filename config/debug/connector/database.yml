@@ -18,20 +18,20 @@ connector:
     name: users_dash_bord
     type: database
     engine: sqlite
-    host: ${oc.env:SQLITE_DB_HOST}
+    host: ${oc.env:USER_DB_HOST}
     port: 0
-    default_name: ${oc.env:SQLITE_DB_NAME}
+    default_name: ${oc.env:USER_DB_NAME}
     pool: {}
     auth:
       type: none
 
-    checkpointer:
-      name: conversation_checkpointer
-      type: database
-      engine: sqlite
-      host: ${oc.env:CHECKPOINT_DB_HOST}
-      port: 0
-      default_name: ${oc.env:CHECKPOINT_DB_NAME}
-      pool: { }
-      auth:
-        type: none
+  checkpointer:
+    name: conversation_checkpointer
+    type: database
+    engine: sqlite
+    host: ${oc.env:CHECKPOINT_DB_HOST}
+    port: 0
+    default_name: ${oc.env:CHECKPOINT_DB_NAME}
+    pool: { }
+    auth:
+      type: none

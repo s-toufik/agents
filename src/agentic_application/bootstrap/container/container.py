@@ -70,14 +70,14 @@ class Container:
         return repository
 
     async def _switch_factories(self, mode: str) -> None:
-        if mode.capitalize() == "ON":
+        if mode.lower() == "on":
             for client in self._clients:
                 if hasattr(client, "start"):
                     await client.start()
             for repository in self._repositories:
                 if hasattr(repository, "connect"):
                     await repository.connect()
-        elif mode.capitalize() == "OFF":
+        elif mode.lower() == "off":
             for client in self._clients:
                 if hasattr(client, "close"):
                     await client.close()

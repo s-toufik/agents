@@ -21,5 +21,6 @@ wheels/
 # Dev
 .hypothesis
 
-# Sndbox
+# Sandbox
+sandbox
 *.db

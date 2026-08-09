@@ -21,7 +21,7 @@ class LangAgent:
         state = await self._load_state(graph, config, request.request_id)
         self._append_user_message(state, request.message)
 
-        result: GraphState = await graph.ainvoke(pack_state(state))
+        result: GraphState = await graph.ainvoke(pack_state(state), config=config)
         final_state: AgentState = unpack_state(result)
 
         return AgentMessage(

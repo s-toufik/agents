@@ -9,22 +9,22 @@ operation:
       temperature: 0.0
       max_tokens: 8000
 
-    ministral_3_14b_reasoning:
-      name: mistralai/ministral-3-14b-reasoning
-      connector: ${connector.llm}
-      endpoint: /chat/completions
-      method: POST
-      parameters:
-        model: ${operation.gpt_oss_20b.name}
-        temperature: 0.0
-        max_tokens: 8000
+  ministral_3_14b_reasoning:
+    name: mistralai/ministral-3-14b-reasoning
+    connector: ${connector.llm}
+    endpoint: /chat/completions
+    method: POST
+    parameters:
+      model: ${operation.gpt_oss_20b.name}
+      temperature: 0.0
+      max_tokens: 8000
 
-    ministral_3_3b:
-      name: mistralai/ministral-3-3b
-      connector: ${connector.llm}
-      endpoint: /chat/completions
-      method: POST
-      parameters:
-        model: ${operation.gpt_oss_20b.name}
-        temperature: 0.0
-        max_tokens: 8000
+  ministral_3_3b:
+    name: mistralai/ministral-3-3b
+    connector: ${connector.llm}
+    endpoint: /chat/completions
+    method: POST
+    parameters:
+      model: ${operation.gpt_oss_20b.name}
+      temperature: 0.0
+      max_tokens: 8000

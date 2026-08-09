@@ -5,6 +5,6 @@ connector:
     base_url: http://nautilus:1234/v1
     timeout: 5
     retry: 3
-    certificate: none
+    certificate: ""
     auth:
       type: none
