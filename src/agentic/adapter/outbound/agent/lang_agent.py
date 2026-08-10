@@ -5,7 +5,6 @@ from agentic.adapter.outbound.agent.graph.schema.agent_state import AgentState
 from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 from agentic.adapter.outbound.agent.service.state_serialization import pack_state, unpack_state
-from agentic.domain.enum.agent_message_status import AgentMessageStatus
 from agentic.domain.model.agent_message import AgentMessage
 from agentic.domain.model.agent_request import AgentRequest
 
@@ -25,10 +24,12 @@ class LangAgent:
         final_state: AgentState = unpack_state(result)
 
         return AgentMessage(
+            session_id=final_state.session_id,
             content=final_state.final_answer or "",
-            error=None,
-            metadata=None,
-            message_status=AgentMessageStatus.END,
+            metadata={
+                "iteration": str(final_state.iteration),
+                "max_iteration": str(final_state.max_iterations),
+            },
         )
 
     @staticmethod

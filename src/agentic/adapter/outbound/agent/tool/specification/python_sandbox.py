@@ -9,6 +9,7 @@ max_memory_mb: int = 256
 description: str = (
     f"Execute Python code for data analysis or computation"
     f"Allowed modules: {', '.join(_ALLOWLIST)}"
+    f"You must return the required arguments"
     f"Assign your final value to 'result' if returning result is not relevant set result='no return'."
     f"Hard timeout: {timeout} seconds"
 )

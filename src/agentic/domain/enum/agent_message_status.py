@@ -1,8 +1,8 @@
 from enum import Enum
 
 
-class AgentMessageStatus(Enum):
-    TOKENS = "tokens"
+class MessageStreamType(Enum):
+    TOKEN = "token"
     COMPLETE = "complete"
     ERROR = "error"
-    END = "end"
+    FINAL = "final"

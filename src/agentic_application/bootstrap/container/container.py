@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import Optional, cast, Any
+from typing import Optional, cast, Any, Callable
 
 import aiosqlite
 from fastapi import APIRouter
@@ -22,6 +22,7 @@ from agentic.adapter.outbound.agent.tool.tool_capabilities import ToolCapability
 from agentic.adapter.outbound.agent.tool.tool_registery import ToolRegistry
 from agentic.application.port.inbound.stream_agent_port import StramAgentPort
 from agentic.application.port.outbound.agent_port import AgentPort
+from agentic.application.port.outbound.sse_queue_port import SSEQueuePort
 from agentic.application.use_case.stream_agent_usecase import on_token, StreamAgentUseCase
 from agentic_application.bootstrap.configuration.application_configuration import (
     LoadApplicationConfiguration,
@@ -115,7 +116,8 @@ class Container:
         graphs, checkpointer = await self._build_graphs()
         agent: AgentPort = LangAgent(graphs)
         use_case: StramAgentPort = StreamAgentUseCase(agent)
-        controller = StreamAgentController(use_case, SSEQueue, self._logging)
+        sse_queue: Callable[[], SSEQueuePort] = SSEQueue
+        controller = StreamAgentController(use_case, sse_queue, self._logging)
         return StreamAgentRouter(controller).router
 
     @property
