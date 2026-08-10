@@ -16,5 +16,5 @@ class AgentState(BaseModel):
     last_node: str = ""
     session_id: str = ""
     iteration: int = 0
-    max_iterations: int = 6
+    max_iterations: int = 20
     final_answer: Optional[str] = None
