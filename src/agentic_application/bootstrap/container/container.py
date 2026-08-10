@@ -9,12 +9,12 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from agentic.adapter.inbound.web.controller.stream_agent_controller import StreamAgentController
-from agentic.adapter.outbound.agent.build_agent import build_agent
+from agentic.adapter.outbound.agent.graph.build_agent import build_agent
 from agentic.adapter.outbound.agent.lang_agent import LangAgent
 from agentic.adapter.outbound.agent.llm.factory import LLMChat
 from agentic.adapter.outbound.agent.llm.mapper import ModelSettingsMapper
 from agentic.adapter.outbound.agent.llm.schema import ModelConnector, ModelParameters
-from agentic.adapter.outbound.agent.sse_queue import SSEQueue
+from agentic.adapter.outbound.agent.streaming.sse_queue import SSEQueue
 from agentic.adapter.outbound.agent.tool.code.python_tool_capability import PythonToolCapability
 from agentic.adapter.outbound.agent.tool.specification import user_sqlite_repository, python_sandbox
 from agentic.adapter.outbound.agent.tool.sql.sql_tool_capability import SQLToolCapability
