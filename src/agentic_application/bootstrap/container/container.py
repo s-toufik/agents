@@ -209,10 +209,10 @@ class Container:
         )
 
     async def _build_graph(
-        self, model_name: str, streaming: bool, checkpointer: Any
+        self, model_name: str, checkpointer: Any
     ) -> tuple[Any, Any]:
-        planner_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=streaming)
-        reflection_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=streaming)
+        planner_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=True)
+        reflection_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=False)
         tool_registry: ToolRegistry = await self._tool_registry()
 
         graph, _ = build_agent(
@@ -220,7 +220,7 @@ class Container:
             reflection_llm,
             tool_registry=tool_registry,
             checkpointer=checkpointer,
-            use_streaming=streaming,
+            use_streaming=True,
             on_token=on_token,
         )
 
@@ -238,7 +238,7 @@ class Container:
 
         for key, model_name in model_names.items():
             graph, _ = await self._build_graph(
-                model_name=model_name, streaming=True, checkpointer=shared_checkpointer
+                model_name=model_name, checkpointer=shared_checkpointer
             )
             graphs[key] = graph
 

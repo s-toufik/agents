@@ -36,7 +36,7 @@ _SAFE_BUILTINS: tuple[str, ...] = (
     "zip",
 )
 
-_ALLOWLIST: frozenset[str] = frozenset(
+ALLOWLIST: frozenset[str] = frozenset(
     {
         "math",
         "statistics",
@@ -136,7 +136,7 @@ class SafeCode:
 
     def _parse_code(self) -> str:
         return self._code_template.substitute(
-            allowlist=repr(sorted(_ALLOWLIST)),
+            allowlist=repr(sorted(ALLOWLIST)),
             safe_builtins=repr(_SAFE_BUILTINS),
             code=repr(self._code),
             max_memory_mb=self._max_memory_mb,
