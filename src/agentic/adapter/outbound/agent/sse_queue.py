@@ -13,7 +13,9 @@ class SSEQueue:
         await self.queue.put(AgentMessageStream(type=MessageStreamType.TOKEN, content=value))
 
     async def final(self, value: str, metadata: Optional[dict[str, str]] = None) -> None:
-        await self.queue.put(AgentMessageStream(type=MessageStreamType.FINAL, content=value, metadata=metadata))
+        await self.queue.put(
+            AgentMessageStream(type=MessageStreamType.FINAL, content=value, metadata=metadata)
+        )
 
     async def error(self, value: str) -> None:
         await self.queue.put(AgentMessageStream(type=MessageStreamType.ERROR, content=value))

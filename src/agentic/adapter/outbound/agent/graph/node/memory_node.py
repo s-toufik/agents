@@ -21,7 +21,7 @@ class MemoryNode(Node):
             token_counter=count_message_tokens,
             max_tokens=self._max_tokens,
             strategy="last",
-            include_system=False
+            include_system=False,
         )
 
         state.conversation = Conversation.from_langchain(trimmed)

@@ -5,7 +5,7 @@ from pydantic import SecretStr
 from agentic.adapter.outbound.agent.llm.schema import ModelConnector, ModelParameters
 from agentic_core.infrastructure.application_configuration.model.connector import ApiConnector
 from agentic_core.infrastructure.application_configuration.model.operation import ApiOperation
-from agentic_core.infrastructure.authentication import NoAuth
+# from agentic_core.infrastructure.authentication import NoAuth
 
 
 class ModelSettingsMapper:
@@ -14,7 +14,7 @@ class ModelSettingsMapper:
 
     def __call__(self) -> tuple[ModelConnector, ModelParameters]:
         connector: ApiConnector = cast(ApiConnector, self._operation.connector)
-        auth: NoAuth = cast(NoAuth, self._operation.connector.auth)
+        # auth: NoAuth = cast(NoAuth, self._operation.connector.auth)
 
         return (
             ModelConnector(
