@@ -4,7 +4,7 @@ from typing import cast, Any
 from omegaconf import OmegaConf, DictConfig
 
 from agentic_core.infrastructure.application_configuration.adapter.schema import (
-    AppConfigurationSchema,
+    ApplicationConfigurationSchema,
     MapperDomainSchema,
 )
 from agentic_core.infrastructure.application_configuration.enum.run_type_environment import (
@@ -35,7 +35,7 @@ class OmegaConfigurationReader:
         omega_container: Any = OmegaConf.to_container(
             omega_config.app_configuration, resolve=True, throw_on_missing=True
         )
-        app_config_schema = AppConfigurationSchema(**omega_container)
+        app_config_schema = ApplicationConfigurationSchema(**omega_container)
         return MapperDomainSchema.map(app_config_schema)
 
     def _omega_read(self, config_dir_env: Path, config_root: Path) -> DictConfig:

@@ -47,7 +47,9 @@ dev = [
     "pytest",
     "hypothesis>=6.151.9",
     "pytest-asyncio",
-    "Faker"
+    "Faker",
+    "pytest-cov>=7.1.0",
+    "pre-commit>=4.6.2",
 ]
 
 [tool.ruff]

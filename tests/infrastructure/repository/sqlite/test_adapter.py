@@ -49,3 +49,18 @@ async def test_execute_returns_rows_as_dict(
         {"id": 1, "name": "John"},
         {"id": 2, "name": "Alice"},
     ]
+
+
+@pytest.mark.asyncio
+async def test_execute_commits_and_returns_empty_list_when_no_result_set():
+    cursor = MagicMock()
+    cursor.description = None
+    connection = MagicMock()
+    connection.execute = AsyncMock(return_value=cursor)
+    connection.commit = AsyncMock()
+    repository = SQLiteRepository(connection)
+
+    result = await repository.execute("DELETE FROM users WHERE id = ?", (1,))
+
+    connection.commit.assert_awaited_once()
+    assert result == []

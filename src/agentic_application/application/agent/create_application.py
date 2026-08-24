@@ -5,13 +5,15 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 
+from agentic_application.bootstrap.container.agent.agent_container import AgentContainer
 from agentic_application.bootstrap.container.container import Container
 from agentic_core.infrastructure.http.middleware.request_id_middleware import RequestIDMiddleware
+from agentic_core.infrastructure.http.middleware.request_middleware import RequestMiddleware
 
 
 @asynccontextmanager
 async def _lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
-    container = Container()
+    container: Container = AgentContainer()
     status: bool
     exception: Exception
     status, exception = await container.boot
@@ -48,6 +50,7 @@ def create_application() -> FastAPI:
     application = FastAPI(title="agent", lifespan=lambda app: _lifespan(app))
 
     application.add_middleware(RequestIDMiddleware)
+    application.add_middleware(RequestMiddleware)
     # noinspection PyTypeChecker
     application.add_middleware(
         CORSMiddleware,

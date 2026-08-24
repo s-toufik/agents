@@ -2,7 +2,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 
-from agentic_core.infrastructure.repository import SQLExpressionHandler
+from agentic_core.infrastructure.repository.sql.adapter import SQLExpressionHandler
 
 # ============================================================================
 # Strategies

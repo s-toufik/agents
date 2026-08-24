@@ -38,7 +38,7 @@ class AgentGraph:
         graph.add_node("planner", self._planner)
         graph.add_node("executor", self._executor)
         graph.add_node("memory", self._memory)
-        graph.add_node("memory_pre_reflection", self._memory)  # same instance, second entry point
+        graph.add_node("memory_pre_reflection", self._memory)
         graph.add_node("reflection", self._reflection)
         graph.add_node("feedback", self._feedback)
         graph.add_node("final", self._final)
