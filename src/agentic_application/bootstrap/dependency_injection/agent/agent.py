@@ -35,6 +35,7 @@ from agentic_core.infrastructure.repository.sql.factory import SQLHandlerFactory
 from agentic_core.infrastructure.repository.sqlite.factory import SQLiteRepositoryFactory
 from agentic_core.infrastructure.repository.sqlite.mapper import SqliteSettingsMapper
 from agentic_core.infrastructure.runtime.python.factory import SafeCodeFactory
+from agentic_core.infrastructure.runtime.python.schema import SafeCodeSettings
 
 
 class AgentDI(BaseDI):
@@ -77,10 +78,9 @@ class AgentDI(BaseDI):
         self._register_repository(factory)
         return await factory.connect()
 
-    async def _tool_registry(
-        self, sql_repository: AsyncSQLRepository, code_semaphore: asyncio.Semaphore
-    ) -> ToolRegistry:
+    async def _tool_registry(self) -> ToolRegistry:
         sql_handler = SQLHandlerFactory()
+        sql_repository: AsyncSQLRepository = await self._sqlite_repository(repository_name="users")
         user_sqlite_too: ToolCapability = SQLToolCapability(
             repository=sql_repository,
             sql_handler=sql_handler,
@@ -90,13 +90,16 @@ class AgentDI(BaseDI):
             args_schema=user_sqlite_repository.args_schema,
         )
 
+        settings: SafeCodeSettings = SafeCodeSettings(
+            code_timeout=python_sandbox.timeout,
+            max_memory_mb=python_sandbox.max_memory_mb,
+        )
+        code_semaphore: asyncio.Semaphore = asyncio.Semaphore(python_sandbox.max_concurrency)
         code_runner: ToolCapability = PythonToolCapability(
-            code_factory=SafeCodeFactory(),
+            code_factory=SafeCodeFactory(settings=settings),
             name=python_sandbox.name,
             description=python_sandbox.description,
             args_schema=python_sandbox.args_schema,
-            timeout=python_sandbox.timeout,
-            max_memory_mb=python_sandbox.max_memory_mb,
             semaphore=code_semaphore,
         )
 
@@ -117,12 +120,10 @@ class AgentDI(BaseDI):
         self,
         model_name: str,
         checkpointer: Any,
-        sql_repository: AsyncSQLRepository,
-        code_semaphore: asyncio.Semaphore,
+        tool_registry: ToolRegistry,
     ) -> tuple[Any, Any]:
         planner_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=True)
         reflection_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=False)
-        tool_registry: ToolRegistry = await self._tool_registry(sql_repository, code_semaphore)
 
         graph, _ = build_agent(
             planner_llm,
@@ -140,21 +141,18 @@ class AgentDI(BaseDI):
             "gpt-oss-20b": "gpt_oss_20b",
             "mistralai/ministral-3-14b-reasoning": "ministral_3_14b_reasoning",
             "mistralai/ministral-3-3b": "ministral_3_3b",
+            "qwen/qwen3-1.7b": "qwen_3_1p7b",
         }
         graphs: dict[str, Any] = defaultdict()
         connection = await self._sqlite_connection("checkpointer")
         shared_checkpointer = AsyncSqliteSaver(connection)
-        sql_repository: AsyncSQLRepository = await self._sqlite_repository(
-            repository_name="users"
-        )
-        code_semaphore = asyncio.Semaphore(python_sandbox.max_concurrency)
+        tool_registry: ToolRegistry = await self._tool_registry()
 
         for key, model_name in model_names.items():
             graph, _ = await self._build_graph(
                 model_name=model_name,
                 checkpointer=shared_checkpointer,
-                sql_repository=sql_repository,
-                code_semaphore=code_semaphore,
+                tool_registry=tool_registry
             )
             graphs[key] = graph
 

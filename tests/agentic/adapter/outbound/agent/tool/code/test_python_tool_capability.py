@@ -14,8 +14,6 @@ def make_capability(code_factory, semaphore=None):
         name="python_executor",
         description="run python",
         args_schema=PythonToolInput,
-        timeout=10,
-        max_memory_mb=256,
         semaphore=semaphore or asyncio.Semaphore(8),
     )
 

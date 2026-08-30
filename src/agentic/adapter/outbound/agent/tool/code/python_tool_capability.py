@@ -1,12 +1,12 @@
 import asyncio
-from typing import Any, Optional, cast
+from typing import Any
 
 from pydantic import BaseModel
 
 from agentic.adapter.outbound.agent.tool.schema.tool_result import ToolResult
 from agentic.adapter.outbound.agent.tool.schema.python_tool_input import PythonToolInput
 from agentic_core.infrastructure.runtime.code import CodeFactory, Code, CodeStdout
-from agentic_core.infrastructure.logger.port.logger import Logger
+
 
 
 class PythonToolCapability:
@@ -16,27 +16,14 @@ class PythonToolCapability:
         name: str,
         description: str,
         args_schema: type[BaseModel],
-        timeout: int,
-        max_memory_mb: int,
-        semaphore: asyncio.Semaphore,
-        logger: Optional[Logger] = None,
+        semaphore: asyncio.Semaphore
     ) -> None:
         self._code_factory = code_factory
         self._name = name
         self._description = description
         self._args_schema = args_schema
-        self._timeout = timeout
-        self._max_memory_mb = max_memory_mb
         self._semaphore = semaphore
-        self._set_logging(logger)
 
-    def _set_logging(self, logger: Logger | None) -> None:
-        if logger is None:
-            import logging
-
-            self._logger: Logger = cast(Logger, logging.getLogger(__name__))
-        else:
-            self._logger: Logger = logger
 
     @property
     def name(self) -> str:
@@ -62,10 +49,7 @@ class PythonToolCapability:
 
         code_executor_proc: Code = self._code_factory(
             code=code,
-            code_template=None,
-            code_timeout=self._timeout,
-            max_memory_mb=self._max_memory_mb,
-        )
+            code_template=None)
 
         async with self._semaphore:
             code_result: CodeStdout = await code_executor_proc.execute()

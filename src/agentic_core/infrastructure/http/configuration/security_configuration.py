@@ -3,4 +3,4 @@ from dataclasses import dataclass
 
 @dataclass(slots=True)
 class SecuritySettings:
-    certificate: str = None
+    certificate: str | None = None

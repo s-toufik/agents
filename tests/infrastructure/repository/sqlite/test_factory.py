@@ -15,7 +15,7 @@ def make_fake_client() -> MagicMock:
 @pytest.mark.asyncio
 async def test_connection_creates_directory_and_memoizes_client(tmp_path):
     db_dir = tmp_path / "data"
-    settings = SqliteConnector(path=str(db_dir), default_name="main")
+    settings = SqliteConnector(path=str(db_dir), default_name="main", max_pool_size=1)
     factory = SQLiteRepositoryFactory(settings)
     fake_client = make_fake_client()
 
@@ -35,7 +35,7 @@ async def test_connection_creates_directory_and_memoizes_client(tmp_path):
 
 @pytest.mark.asyncio
 async def test_connection_applies_wal_and_busy_timeout_pragmas(tmp_path):
-    settings = SqliteConnector(path=str(tmp_path), default_name="main")
+    settings = SqliteConnector(path=str(tmp_path), default_name="main", max_pool_size=1)
     factory = SQLiteRepositoryFactory(settings)
     fake_client = make_fake_client()
 
@@ -52,7 +52,7 @@ async def test_connection_applies_wal_and_busy_timeout_pragmas(tmp_path):
 
 @pytest.mark.asyncio
 async def test_connection_does_not_create_directory_when_it_already_exists(tmp_path):
-    settings = SqliteConnector(path=str(tmp_path), default_name="main")
+    settings = SqliteConnector(path=str(tmp_path), default_name="main", max_pool_size=1)
     factory = SQLiteRepositoryFactory(settings)
 
     with patch(
@@ -66,8 +66,8 @@ async def test_connection_does_not_create_directory_when_it_already_exists(tmp_p
 
 @pytest.mark.asyncio
 async def test_connect_returns_sqlite_repository_backed_by_a_connection_pool(tmp_path):
-    settings = SqliteConnector(path=str(tmp_path), default_name="main")
-    factory = SQLiteRepositoryFactory(settings, pool_size=3)
+    settings = SqliteConnector(path=str(tmp_path), default_name="main", max_pool_size=3)
+    factory = SQLiteRepositoryFactory(settings)
 
     with patch(
         "agentic_core.infrastructure.repository.sqlite.factory.connect",
@@ -83,8 +83,8 @@ async def test_connect_returns_sqlite_repository_backed_by_a_connection_pool(tmp
 
 @pytest.mark.asyncio
 async def test_disconnect_closes_client_and_pool_and_is_idempotent(tmp_path):
-    settings = SqliteConnector(path=str(tmp_path), default_name="main")
-    factory = SQLiteRepositoryFactory(settings, pool_size=2)
+    settings = SqliteConnector(path=str(tmp_path), default_name="main", max_pool_size=2)
+    factory = SQLiteRepositoryFactory(settings)
     clients = [make_fake_client(), make_fake_client(), make_fake_client()]
 
     with patch(

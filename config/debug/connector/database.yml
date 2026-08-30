@@ -21,7 +21,8 @@ connector:
     host: ${oc.env:USER_DB_HOST}
     port: 0
     default_name: ${oc.env:USER_DB_NAME}
-    pool: {}
+    pool:
+      max: 4
     auth:
       type: none
 
@@ -32,6 +33,6 @@ connector:
     host: ${oc.env:CHECKPOINT_DB_HOST}
     port: 0
     default_name: ${oc.env:CHECKPOINT_DB_NAME}
-    pool: { }
+    pool: {}
     auth:
       type: none

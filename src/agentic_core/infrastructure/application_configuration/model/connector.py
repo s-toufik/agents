@@ -17,7 +17,7 @@ class ApiConnector(BaseConnector):
     base_url: str
     timeout: int
     retry: int
-    certificate: str = field(default=None)
+    certificate: str | None = field(default=None)
 
 
 @dataclass(slots=True)

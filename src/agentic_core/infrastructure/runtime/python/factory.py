@@ -1,21 +1,23 @@
 from string import Template
 from typing import Optional
 
-from agentic_core.infrastructure.runtime.code import Code, TIMEOUT, MAX_MEMORY_MB
+from agentic_core.infrastructure.runtime.code import Code
 from agentic_core.infrastructure.runtime.python.adapter import SafeCode
+from agentic_core.infrastructure.runtime.python.schema import SafeCodeSettings
 
 
 class SafeCodeFactory:
+    def __init__(self, settings: SafeCodeSettings | None) -> None:
+        self._settings = settings or SafeCodeSettings()
+
     def __call__(
         self,
         code: str,
-        code_template: Optional[Template] = None,
-        code_timeout: Optional[int] = TIMEOUT,
-        max_memory_mb: Optional[int] = MAX_MEMORY_MB,
+        code_template: Optional[Template] = None
     ) -> Code:
         return SafeCode(
             code=code,
             code_template=code_template,
-            code_timeout=code_timeout,
-            max_memory_mb=max_memory_mb,
+            code_timeout=self._settings.code_timeout,
+            max_memory_mb=self._settings.max_memory_mb,
         )

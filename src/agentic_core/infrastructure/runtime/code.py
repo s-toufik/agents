@@ -1,24 +1,14 @@
-from dataclasses import dataclass
 from string import Template
 from typing import Protocol, Optional
 
-TIMEOUT: int = 10
-MAX_MEMORY_MB: int = 256
-
-
-@dataclass
-class CodeStdout:
-    stdout: str
-    stderr: str
+from agentic_core.infrastructure.runtime.python.schema import CodeStdout
 
 
 class CodeFactory(Protocol):
     def __call__(
         self,
         code: str,
-        code_template: Optional[Template],
-        code_timeout: Optional[int],
-        max_memory_mb: Optional[int],
+        code_template: Optional[Template] = None
     ) -> Code: ...
 
 

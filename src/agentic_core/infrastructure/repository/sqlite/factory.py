@@ -1,9 +1,9 @@
 from pathlib import Path
 from sqlite3 import Row
-from typing import cast
 
 from aiosqlite import Connection, connect
 
+from agentic_core.infrastructure.repository.repository import AsyncSQLRepository
 from agentic_core.infrastructure.repository.sqlite.adapter import SQLiteRepository
 from agentic_core.infrastructure.repository.sqlite.schema import SqliteConnector
 
@@ -15,26 +15,27 @@ _PRAGMAS: tuple[str, ...] = (
 
 
 class SQLiteRepositoryFactory:
-    def __init__(self, settings: SqliteConnector, pool_size: int = 4):
+    def __init__(self, settings: SqliteConnector):
         self._settings = settings
-        self._pool_size = pool_size
         self._client: Connection | None = None
         self._pool: list[Connection] | None = None
-        self._repository: SQLiteRepository | None = None
+        self._repository: AsyncSQLRepository | None = None
 
     async def connection(self) -> Connection:
         if self._client is None:
             self._create_repository_directory(self._settings.path)
             self._client = await self._open_connection()
 
-        return cast(Connection, self._client)
+        return self._client
 
-    async def connect(self) -> SQLiteRepository:
-        if self._repository is None:
-            self._create_repository_directory(self._settings.path)
-            self._pool = [await self._open_connection() for _ in range(self._pool_size)]
-            self._repository = SQLiteRepository(self._pool)
+    async def connect(self) -> AsyncSQLRepository:
 
+        if self._repository is not None:
+            return self._repository
+
+        self._create_repository_directory(self._settings.path)
+        self._pool = [await self._open_connection() for _ in range(self._settings.max_pool_size)]
+        self._repository = SQLiteRepository(self._pool)
         return self._repository
 
     async def disconnect(self) -> None:

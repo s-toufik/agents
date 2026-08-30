@@ -15,7 +15,7 @@ operation:
     endpoint: /chat/completions
     method: POST
     parameters:
-      model: ${operation.gpt_oss_20b.name}
+      model: ${operation.ministral_3_14b_reasoning.name}
       temperature: 0.0
       max_tokens: 8000
 
@@ -25,6 +25,16 @@ operation:
     endpoint: /chat/completions
     method: POST
     parameters:
-      model: ${operation.gpt_oss_20b.name}
+      model: ${operation.ministral_3_3b.name}
+      temperature: 0.0
+      max_tokens: 8000
+
+  qwen_3_1p7b:
+    name: qwen/qwen3-1.7b
+    connector: ${connector.llm}
+    endpoint: /chat/completions
+    method: POST
+    parameters:
+      model: ${operation.qwen_3_1p7b.name}
       temperature: 0.0
       max_tokens: 8000
