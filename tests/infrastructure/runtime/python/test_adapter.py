@@ -1,6 +1,6 @@
+import asyncio
 import os
-import subprocess
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -31,15 +31,23 @@ async def test_execute_runs_real_sandboxed_code_and_returns_json_result():
 @pytest.mark.asyncio
 async def test_execute_returns_timeout_message_on_timeout_expired():
     safe_code = SafeCode(code="result = 1", code_timeout=5)
+    fake_proc = MagicMock(kill=MagicMock(), wait=AsyncMock())
 
-    with patch(
-        "agentic_core.infrastructure.runtime.python.adapter.subprocess.run",
-        side_effect=subprocess.TimeoutExpired(cmd="python", timeout=5),
+    with (
+        patch(
+            "agentic_core.infrastructure.runtime.python.adapter.asyncio.create_subprocess_exec",
+            AsyncMock(return_value=fake_proc),
+        ),
+        patch(
+            "agentic_core.infrastructure.runtime.python.adapter.asyncio.wait_for",
+            side_effect=asyncio.TimeoutError,
+        ),
     ):
         output = await safe_code.execute()
 
     assert output.stdout == ""
     assert "timed out after 5s" in output.stderr
+    fake_proc.kill.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -47,8 +55,8 @@ async def test_execute_returns_subprocess_error_message_on_unexpected_exception(
     safe_code = SafeCode(code="result = 1")
 
     with patch(
-        "agentic_core.infrastructure.runtime.python.adapter.subprocess.run",
-        side_effect=OSError("no such file"),
+        "agentic_core.infrastructure.runtime.python.adapter.asyncio.create_subprocess_exec",
+        AsyncMock(side_effect=OSError("no such file")),
     ):
         output = await safe_code.execute()
 
@@ -60,14 +68,17 @@ async def test_execute_returns_subprocess_error_message_on_unexpected_exception(
 @pytest.mark.asyncio
 async def test_execute_on_nonzero_returncode_embeds_stderr_text_not_returncode():
     """Regression test documenting a real bug: the non-zero-returncode branch formats
-    `f"Process exited with code {proc.stderr}."`, embedding stderr text where the
+    `f"Process exited with code {stderr}."`, embedding stderr text where the
     numeric return code was almost certainly intended."""
     safe_code = SafeCode(code="result = 1")
-    fake_proc = MagicMock(returncode=1, stdout="", stderr="Traceback (most recent call last)")
+    fake_proc = MagicMock(
+        returncode=1,
+        communicate=AsyncMock(return_value=(b"", b"Traceback (most recent call last)")),
+    )
 
     with patch(
-        "agentic_core.infrastructure.runtime.python.adapter.subprocess.run",
-        return_value=fake_proc,
+        "agentic_core.infrastructure.runtime.python.adapter.asyncio.create_subprocess_exec",
+        AsyncMock(return_value=fake_proc),
     ):
         output = await safe_code.execute()
 
@@ -77,15 +88,15 @@ async def test_execute_on_nonzero_returncode_embeds_stderr_text_not_returncode()
 @pytest.mark.asyncio
 async def test_execute_always_removes_temporary_script(tmp_path):
     created_paths = []
-    original_create = SafeCode._create_temporary_script
+    original_write = SafeCode._write_temporary_script
 
-    def spying_create(runner_src):
-        path = original_create(runner_src)
+    def spying_write(runner_src):
+        path = original_write(runner_src)
         created_paths.append(path)
         return path
 
     safe_code = SafeCode(code="result = 1")
-    with patch.object(SafeCode, "_create_temporary_script", staticmethod(spying_create)):
+    with patch.object(SafeCode, "_write_temporary_script", staticmethod(spying_write)):
         await safe_code.execute()
 
     assert created_paths

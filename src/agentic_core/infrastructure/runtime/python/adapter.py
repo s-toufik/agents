@@ -1,5 +1,5 @@
+import asyncio
 import os
-import subprocess
 import sys
 import tempfile
 import textwrap
@@ -143,7 +143,7 @@ class SafeCode:
         )
 
     @staticmethod
-    def _create_temporary_script(runner_src: str) -> str:
+    def _write_temporary_script(runner_src: str) -> str:
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", delete=False, encoding="utf-8"
         ) as temporary_script:
@@ -152,30 +152,42 @@ class SafeCode:
 
         return temporary_script_path
 
+    @classmethod
+    async def _create_temporary_script(cls, runner_src: str) -> str:
+        return await asyncio.to_thread(cls._write_temporary_script, runner_src)
+
     async def execute(self) -> CodeStdout:
 
         runner_src: str = self._parse_code()
-        temporary_script_path = self._create_temporary_script(runner_src)
+        temporary_script_path = await self._create_temporary_script(runner_src)
         env = {
             **os.environ,
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHON_COLORS": "0",
         }
         try:
-            proc = subprocess.run(
-                [sys.executable, temporary_script_path],
-                capture_output=True,
-                text=True,
-                timeout=self._code_timeout,
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable,
+                temporary_script_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
                 env=env,
             )
-        except subprocess.TimeoutExpired:
-            return CodeStdout(stdout="", stderr=f"Execution timed out after {self._code_timeout}s.")
+            try:
+                stdout_bytes, stderr_bytes = await asyncio.wait_for(
+                    proc.communicate(), timeout=self._code_timeout
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.wait()
+                return CodeStdout(stdout="", stderr=f"Execution timed out after {self._code_timeout}s.")
         except Exception as exc:
             return CodeStdout(stdout="", stderr=f"Subprocess error: {exc}")
         finally:
-            os.unlink(temporary_script_path)
+            await asyncio.to_thread(os.unlink, temporary_script_path)
 
+        stdout = stdout_bytes.decode("utf-8", errors="replace")
+        stderr = stderr_bytes.decode("utf-8", errors="replace")
         if proc.returncode != 0:
-            return CodeStdout(stdout="", stderr=f"Process exited with code {proc.stderr}.")
-        return CodeStdout(stdout=proc.stdout.strip() or "", stderr=proc.stderr.strip() or "")
+            return CodeStdout(stdout="", stderr=f"Process exited with code {stderr}.")
+        return CodeStdout(stdout=stdout.strip() or "", stderr=stderr.strip() or "")

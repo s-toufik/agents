@@ -4,6 +4,7 @@ from asyncio import Task
 from datetime import datetime
 from typing import Callable, AsyncIterator
 
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
 
@@ -28,23 +29,36 @@ class StreamAgentController:
         use_case: StramAgentPort,
         stream_events: Callable[[], SSEQueuePort],
         logger: Logger,
+        max_concurrent_streams: int = 200,
     ) -> None:
         self._use_case = use_case
         self._stream_events = stream_events
         self._logger = logger
+        self._admission = asyncio.Semaphore(max_concurrent_streams)
 
     async def execute(self, request: AgentRequestSchema) -> StreamingResponse:
 
         request_id = request.request_id or request_id_context.get() or "N/A"
-        starlette_request: Request | None = request_context.get() or None
-        self._logger.info(f"[{request_id}]: request received at {datetime.now()}")
 
-        domain_request: AgentRequest = request.to_domain()
-        events: SSEQueuePort = self._stream_events()
+        if self._admission.locked():
+            self._logger.warning(f"[{request_id}] rejected: server at capacity")
+            raise HTTPException(status_code=503, detail="Server is at capacity, please retry.")
 
-        use_case_task: Task[None] = asyncio.create_task(
-            self._use_case.execute(domain_request, events)
-        )
+        await self._admission.acquire()
+
+        try:
+            starlette_request: Request | None = request_context.get() or None
+            self._logger.info(f"[{request_id}]: request received at {datetime.now()}")
+
+            domain_request: AgentRequest = request.to_domain()
+            events: SSEQueuePort = self._stream_events()
+
+            use_case_task: Task[None] = asyncio.create_task(
+                self._use_case.execute(domain_request, events)
+            )
+        except Exception:
+            self._admission.release()
+            raise
 
         async def event_generator() -> AsyncIterator[bytes]:
             try:
@@ -88,6 +102,7 @@ class StreamAgentController:
                         await use_case_task
                     except BaseException:
                         pass
+                self._admission.release()
 
         return StreamingResponse(
             event_generator(),

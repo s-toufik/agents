@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Optional, cast
 
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ class PythonToolCapability:
         args_schema: type[BaseModel],
         timeout: int,
         max_memory_mb: int,
+        semaphore: asyncio.Semaphore,
         logger: Optional[Logger] = None,
     ) -> None:
         self._code_factory = code_factory
@@ -25,6 +27,7 @@ class PythonToolCapability:
         self._args_schema = args_schema
         self._timeout = timeout
         self._max_memory_mb = max_memory_mb
+        self._semaphore = semaphore
         self._set_logging(logger)
 
     def _set_logging(self, logger: Logger | None) -> None:
@@ -64,7 +67,8 @@ class PythonToolCapability:
             max_memory_mb=self._max_memory_mb,
         )
 
-        code_result: CodeStdout = await code_executor_proc.execute()
+        async with self._semaphore:
+            code_result: CodeStdout = await code_executor_proc.execute()
 
         return ToolResult(
             tool_name=self.name, id=call_id, output=code_result.stdout, error=code_result.stderr

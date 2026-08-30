@@ -9,7 +9,7 @@ from agentic.domain.enum.agent_message_type import AgentMessageType
 class AgentMessageSchema(BaseModel):
     session_id: str
     content: str
-    metadata: Optional[dict[str, str]]
+    metadata: Optional[dict[str, str | int | float]]
     error: Optional[str] = None
     message_status: MessageStreamType = MessageStreamType.FINAL
     message_type: AgentMessageType = AgentMessageType.TEXT

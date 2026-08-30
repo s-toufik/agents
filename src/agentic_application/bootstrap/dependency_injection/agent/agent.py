@@ -1,4 +1,5 @@
 from agentic_application.bootstrap.dependency_injection.base.base import BaseDI
+import asyncio
 from collections import defaultdict
 from functools import cached_property
 from typing import cast, Any
@@ -76,11 +77,12 @@ class AgentDI(BaseDI):
         self._register_repository(factory)
         return await factory.connect()
 
-    async def _tool_registry(self) -> ToolRegistry:
+    async def _tool_registry(
+        self, sql_repository: AsyncSQLRepository, code_semaphore: asyncio.Semaphore
+    ) -> ToolRegistry:
         sql_handler = SQLHandlerFactory()
-        user_sqlite = await self._sqlite_repository(repository_name="users")
         user_sqlite_too: ToolCapability = SQLToolCapability(
-            repository=user_sqlite,
+            repository=sql_repository,
             sql_handler=sql_handler,
             dialect=user_sqlite_repository.dialect,
             name=user_sqlite_repository.name,
@@ -95,6 +97,7 @@ class AgentDI(BaseDI):
             args_schema=python_sandbox.args_schema,
             timeout=python_sandbox.timeout,
             max_memory_mb=python_sandbox.max_memory_mb,
+            semaphore=code_semaphore,
         )
 
         return ToolRegistry(tools=[user_sqlite_too, code_runner])
@@ -110,10 +113,16 @@ class AgentDI(BaseDI):
             streaming=streaming
         )
 
-    async def _build_graph(self, model_name: str, checkpointer: Any) -> tuple[Any, Any]:
+    async def _build_graph(
+        self,
+        model_name: str,
+        checkpointer: Any,
+        sql_repository: AsyncSQLRepository,
+        code_semaphore: asyncio.Semaphore,
+    ) -> tuple[Any, Any]:
         planner_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=True)
         reflection_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=False)
-        tool_registry: ToolRegistry = await self._tool_registry()
+        tool_registry: ToolRegistry = await self._tool_registry(sql_repository, code_semaphore)
 
         graph, _ = build_agent(
             planner_llm,
@@ -135,10 +144,17 @@ class AgentDI(BaseDI):
         graphs: dict[str, Any] = defaultdict()
         connection = await self._sqlite_connection("checkpointer")
         shared_checkpointer = AsyncSqliteSaver(connection)
+        sql_repository: AsyncSQLRepository = await self._sqlite_repository(
+            repository_name="users"
+        )
+        code_semaphore = asyncio.Semaphore(python_sandbox.max_concurrency)
 
         for key, model_name in model_names.items():
             graph, _ = await self._build_graph(
-                model_name=model_name, checkpointer=shared_checkpointer
+                model_name=model_name,
+                checkpointer=shared_checkpointer,
+                sql_repository=sql_repository,
+                code_semaphore=code_semaphore,
             )
             graphs[key] = graph
 

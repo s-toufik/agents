@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 
 from pydantic import BaseModel
@@ -56,7 +57,7 @@ class SQLToolCapability:
 
         try:
             sql_handler: SQLHandler = self._sql_handler(query, dialect=dialect)
-            statements: str = sql_handler.transpile()
+            statements: str = await asyncio.to_thread(sql_handler.transpile)
         except Exception as exception:
             return ToolResult(
                 tool_name=self._name,

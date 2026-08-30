@@ -6,6 +6,7 @@ from agentic_core.infrastructure.runtime.python.adapter import ALLOWLIST
 name: str = "python_executor"
 timeout: int = 100
 max_memory_mb: int = 256
+max_concurrency: int = 8
 description: str = (
     f"Execute Python code for data analysis or computation"
     f"Allowed modules: {', '.join(ALLOWLIST)}"

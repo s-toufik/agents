@@ -1,3 +1,5 @@
+import asyncio
+
 from langchain_core.messages import trim_messages, BaseMessage
 
 from agentic.adapter.outbound.agent.graph.node.node import Node
@@ -16,7 +18,8 @@ class MemoryNode(Node):
         state: AgentState = self._unpack(graph_state)
         lc_messages: list[BaseMessage] = state.conversation.to_langchain()
 
-        trimmed: list[BaseMessage] = trim_messages(
+        trimmed: list[BaseMessage] = await asyncio.to_thread(
+            trim_messages,
             lc_messages,
             token_counter=count_message_tokens,
             max_tokens=self._max_tokens,

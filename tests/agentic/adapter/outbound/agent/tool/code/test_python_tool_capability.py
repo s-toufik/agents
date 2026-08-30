@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -6,7 +8,7 @@ from agentic.adapter.outbound.agent.tool.schema.python_tool_input import PythonT
 from agentic_core.infrastructure.runtime.code import CodeStdout
 
 
-def make_capability(code_factory):
+def make_capability(code_factory, semaphore=None):
     return PythonToolCapability(
         code_factory=code_factory,
         name="python_executor",
@@ -14,6 +16,7 @@ def make_capability(code_factory):
         args_schema=PythonToolInput,
         timeout=10,
         max_memory_mb=256,
+        semaphore=semaphore or asyncio.Semaphore(8),
     )
 
 
@@ -57,3 +60,34 @@ def test_schema_returns_name_description_and_json_schema():
     assert schema["name"] == "python_executor"
     assert schema["description"] == "run python"
     assert "properties" in schema["parameters"]
+
+
+@pytest.mark.asyncio
+async def test_execute_never_exceeds_semaphore_concurrency_limit():
+    in_flight = 0
+    max_observed = 0
+
+    async def slow_execute():
+        nonlocal in_flight, max_observed
+        in_flight += 1
+        max_observed = max(max_observed, in_flight)
+        await asyncio.sleep(0.01)
+        in_flight -= 1
+        return CodeStdout(stdout="ok", stderr="")
+
+    def make_executor(**_kwargs):
+        executor = MagicMock()
+        executor.execute = slow_execute
+        return executor
+
+    capability = make_capability(make_executor, semaphore=asyncio.Semaphore(2))
+
+    requests = []
+    for i in range(6):
+        request = PythonToolInput(code="result = 1")
+        request.call_id = f"call_{i}"
+        requests.append(request)
+
+    await asyncio.gather(*(capability.execute(request) for request in requests))
+
+    assert max_observed <= 2
