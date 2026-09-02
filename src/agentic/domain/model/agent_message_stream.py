@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any
 
 from agentic.domain.enum.agent_message_status import MessageStreamType
 
@@ -8,4 +8,4 @@ from agentic.domain.enum.agent_message_status import MessageStreamType
 class AgentMessageStream:
     type: MessageStreamType
     content: str
-    metadata: Optional[dict[str, str | int | float]] = None
+    metadata: dict[str, Any] | None = None

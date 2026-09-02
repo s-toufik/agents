@@ -21,7 +21,7 @@ class LLMChat:
             api_key=self._model_connector.api_key,
             model=self._model_parameters.model_name,
             http_async_client=self._async_client_httpx,
-            max_tokens=self._model_parameters.max_tokens,
+            max_tokens=8000,
             temperature=self._model_parameters.temperature,
             streaming=streaming,
         )

@@ -2,6 +2,7 @@ operation:
   gpt_oss_20b:
     name: gpt-oss-20b
     connector: ${connector.llm}
+    type: api
     endpoint: /chat/completions
     method: POST
     parameters:
@@ -12,6 +13,7 @@ operation:
   ministral_3_14b_reasoning:
     name: mistralai/ministral-3-14b-reasoning
     connector: ${connector.llm}
+    type: api
     endpoint: /chat/completions
     method: POST
     parameters:
@@ -21,6 +23,7 @@ operation:
 
   ministral_3_3b:
     name: mistralai/ministral-3-3b
+    type: api
     connector: ${connector.llm}
     endpoint: /chat/completions
     method: POST
@@ -32,6 +35,7 @@ operation:
   qwen_3_1p7b:
     name: qwen/qwen3-1.7b
     connector: ${connector.llm}
+    type: api
     endpoint: /chat/completions
     method: POST
     parameters:

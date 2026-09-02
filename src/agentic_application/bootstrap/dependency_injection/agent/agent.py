@@ -1,8 +1,24 @@
+from pycraftcore.application_configuration.model.connector import ApiConnector, DatabaseConnector
+from pycraftcore.application_configuration.model.operation import ApiOperation
+from pycraftcore.circuit_breaker.configuration import CircuitBreakerSettings
+from pycraftcore.http.configuration import HttpClientSettings, LimitsSettings
+from pycraftcore.http.policy.http_error_policy import is_retryable, is_business_error
+from pycraftcore.query_language.adapter import SqlHandlerFactory
+from pycraftcore.query_language.port import QueryFactory
+from pycraftcore.repository.adapter import SqliteSettingsMapper, SQLiteRepositoryFactory
+from pycraftcore.repository.port import AsyncRepositoryFactory, AsyncRepository
+
+from pycraftcore.resilient_http.adapter import ResilientTransportFactory
+from pycraftcore.resilient_http.configuration import ResilientHttpSettings
+from pycraftcore.retry.configuration import RetrySettings
+from pycraftcore.runtime.adapter import PythonSafeCodeFactory
+from pycraftcore.runtime.configuration import SafeCodeSettings
+
 from agentic_application.bootstrap.dependency_injection.base.base import BaseDI
 import asyncio
 from collections import defaultdict
 from functools import cached_property
-from typing import cast, Any
+from typing import Any
 
 import aiosqlite
 from httpx import AsyncClient
@@ -19,68 +35,66 @@ from agentic.adapter.outbound.agent.tool.sql.sql_tool_capability import SQLToolC
 from agentic.adapter.outbound.agent.tool.tool_capabilities import ToolCapability
 from agentic.adapter.outbound.agent.tool.tool_registery import ToolRegistry
 from agentic.application.use_case.stream_agent_usecase import on_token
-from agentic_core.infrastructure.application_configuration.enum.connector_type import ConnectorType
-from agentic_core.infrastructure.application_configuration.model.connector import (
-    ApiConnector,
-    DatabaseConnector,
-)
-from agentic_core.infrastructure.application_configuration.model.operation import ApiOperation
-from agentic_core.infrastructure.http.adapter.httpx.factory import HttpxClientFactory
-from agentic_core.infrastructure.http.configuration.http_client_configuration import (
-    HttpClientSettings,
-)
-from agentic_core.infrastructure.http.port.async_http_client import AsyncHttpFactory
-from agentic_core.infrastructure.repository.repository import RepositoryFactory, AsyncSQLRepository
-from agentic_core.infrastructure.repository.sql.factory import SQLHandlerFactory
-from agentic_core.infrastructure.repository.sqlite.factory import SQLiteRepositoryFactory
-from agentic_core.infrastructure.repository.sqlite.mapper import SqliteSettingsMapper
-from agentic_core.infrastructure.runtime.python.factory import SafeCodeFactory
-from agentic_core.infrastructure.runtime.python.schema import SafeCodeSettings
 
 
 class AgentDI(BaseDI):
     @cached_property
-    def _llm_httpx_factory(self) -> AsyncHttpFactory:
-        connector: ApiConnector = cast(
-            ApiConnector, self._configuration.connector.get(ConnectorType.api).get("llm")
-        )
-        settings = HttpClientSettings()
-        settings.client_params.base_url = connector.base_url
-        settings.security.certificate = connector.certificate
-        return self._register_client(
-            HttpxClientFactory(http_client_settings=settings, logger=self._logging)
+    def _llm_httpx_factory(self) -> ResilientTransportFactory:
+        connector: ApiConnector = self._configuration.connector.api("llm")
+        http_settings = HttpClientSettings(limits=LimitsSettings(timeout=5))
+        http_settings.client_params.base_url = connector.base_url
+        http_settings.security.certificate = connector.certificate
+
+        resilient_http_settings: ResilientHttpSettings = ResilientHttpSettings(
+            http=http_settings,
+            retry=RetrySettings(
+                retry_count=3,
+                retry_delay=1,
+                max_retry_delay=20,
+                jitter=1,
+                should_retry=is_retryable,
+            ),
+            circuit_breaker=CircuitBreakerSettings(
+                failure_threshold=2,
+                recovery_timeout=30,
+                is_excluded=is_business_error,
+                name="llm-gateway",
+            ),
         )
 
-    @property
+        tracer = self._telemetry_provider.tracer("llm-gateway")
+
+        return ResilientTransportFactory(
+            settings=resilient_http_settings,
+            trace_manager=tracer,
+            logger=self._logging,
+        )
+
+    @cached_property
     def _llm_http_client(self) -> AsyncClient:
-        return self._llm_httpx_factory.resilient_client_instance
+        return self._llm_httpx_factory.create_async_client()
+
+    async def _close_llm_http_client(self) -> None:
+        client = self.__dict__.pop("_llm_http_client", None)
+        if client is not None:
+            await client.aclose()
 
     async def _sqlite_connection(self, repository_name) -> aiosqlite.Connection:
-        connector: DatabaseConnector = cast(
-            DatabaseConnector,
-            self._configuration.connector.get(ConnectorType.database).get(
-                repository_name
-            ),
-        )
+        connector: DatabaseConnector = self._configuration.connector.database(repository_name)
         settings = SqliteSettingsMapper(connector)()
-        factory: RepositoryFactory = SQLiteRepositoryFactory(settings)
+        factory: AsyncRepositoryFactory = SQLiteRepositoryFactory(settings)
         return await factory.connection()
 
-    async def _sqlite_repository(self, repository_name: str) -> AsyncSQLRepository:
-        connector: DatabaseConnector = cast(
-            DatabaseConnector,
-            self._configuration.connector.get(ConnectorType.database).get(
-                repository_name
-            ),
-        )
+    async def _sqlite_repository(self, repository_name: str) -> AsyncRepository:
+        connector: DatabaseConnector = self._configuration.connector.database(repository_name)
         settings = SqliteSettingsMapper(connector)()
-        factory: RepositoryFactory = SQLiteRepositoryFactory(settings)
+        factory: AsyncRepositoryFactory = SQLiteRepositoryFactory(settings)
         self._register_repository(factory)
         return await factory.connect()
 
     async def _tool_registry(self) -> ToolRegistry:
-        sql_handler = SQLHandlerFactory()
-        sql_repository: AsyncSQLRepository = await self._sqlite_repository(repository_name="users")
+        sql_handler: QueryFactory = SqlHandlerFactory()
+        sql_repository: AsyncRepository = await self._sqlite_repository(repository_name="users")
         user_sqlite_too: ToolCapability = SQLToolCapability(
             repository=sql_repository,
             sql_handler=sql_handler,
@@ -96,7 +110,7 @@ class AgentDI(BaseDI):
         )
         code_semaphore: asyncio.Semaphore = asyncio.Semaphore(python_sandbox.max_concurrency)
         code_runner: ToolCapability = PythonToolCapability(
-            code_factory=SafeCodeFactory(settings=settings),
+            code_factory=PythonSafeCodeFactory(settings=settings),
             name=python_sandbox.name,
             description=python_sandbox.description,
             args_schema=python_sandbox.args_schema,
@@ -106,9 +120,7 @@ class AgentDI(BaseDI):
         return ToolRegistry(tools=[user_sqlite_too, code_runner])
 
     def _llm_for_model(self, model_name: str, streaming: bool) -> ChatOpenAI:
-        operation: ApiOperation = cast(
-            ApiOperation, self._configuration.operation.get(model_name)
-        )
+        operation: ApiOperation = self._configuration.operation.api(model_name)
         connector: ModelConnector
         parameters: ModelParameters
         connector, parameters = ModelSettingsMapper(operation)()
@@ -150,9 +162,7 @@ class AgentDI(BaseDI):
 
         for key, model_name in model_names.items():
             graph, _ = await self._build_graph(
-                model_name=model_name,
-                checkpointer=shared_checkpointer,
-                tool_registry=tool_registry
+                model_name=model_name, checkpointer=shared_checkpointer, tool_registry=tool_registry
             )
             graphs[key] = graph
 

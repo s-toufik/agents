@@ -1,28 +1,28 @@
 import traceback
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from fastapi import FastAPI, APIRouter
+from pycraftcore.http.middleware import RequestMiddleware
+from pycraftcore.http.middleware.request_id_middleware import RequestIDMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from agentic_application.bootstrap.container.agent.agent_container import AgentContainer
 from agentic_application.bootstrap.container.container import Container
-from agentic_core.infrastructure.http.middleware.request_id_middleware import RequestIDMiddleware
-from agentic_core.infrastructure.http.middleware.request_middleware import RequestMiddleware
 
 
 @asynccontextmanager
-async def _lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
+async def _lifespan(application: FastAPI) -> AsyncGenerator[None]:
     container: Container = AgentContainer()
     status: bool
-    exception: Exception
-    status, exception = await container.boot
+    boot_exception: Exception | None
+    status, boot_exception = await container.boot
     container.logging.info("Container booted")
-    if not status and exception:
-        container.logging.error(f"Container failed to boot: {exception}")
-        traceback_str: str = "".join(traceback.format_exception(exception))
+    if not status and boot_exception:
+        container.logging.error(f"Container failed to boot: {boot_exception}")
+        traceback_str: str = "".join(traceback.format_exception(boot_exception))
         container.logging.error(traceback_str)
-        raise RuntimeError("Container failed to boot") from exception
+        raise RuntimeError("Container failed to boot") from boot_exception
 
     try:
         routers: list[APIRouter] = await container.create_routers

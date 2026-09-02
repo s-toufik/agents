@@ -1,29 +1,30 @@
+import asyncio
 from functools import cached_property
 
+from pycraftcore.application_configuration import ApplicationConfiguration
+from pycraftcore.http.port import AsyncHttpFactory
+from pycraftcore.logger.adapter import LoguruLogger
+from pycraftcore.logger.port import Logger
+from pycraftcore.repository.port import AsyncRepositoryFactory
+from pycraftcore.telemetry.adapter import OpenTelemetryProvider
+from pycraftcore.telemetry.port import TelemetryProvider
 
 from agentic_application.bootstrap.configuration.application_configuration import (
-    LoadApplicationConfiguration,
+    SetApplicationConfiguration,
 )
 from agentic_application.bootstrap.configuration.application_logger import create_logger
-from agentic_core.infrastructure.application_configuration.model.configuration import (
-    ApplicationConfiguration,
-)
-from agentic_core.infrastructure.http.port.async_http_client import AsyncHttpFactory
-from agentic_core.infrastructure.logger.adapter.loguru_logger import LoguruLogger
-from agentic_core.infrastructure.logger.port.logger import Logger
-from agentic_core.infrastructure.repository.repository import RepositoryFactory
 
 
 class BaseDI:
     def __init__(self):
         self._clients: list[AsyncHttpFactory] = []
-        self._repositories: list[RepositoryFactory] = []
+        self._repositories: list[AsyncRepositoryFactory] = []
 
     def _register_client(self, client: AsyncHttpFactory) -> AsyncHttpFactory:
         self._clients.append(client)
         return client
 
-    def _register_repository(self, repository: RepositoryFactory) -> RepositoryFactory:
+    def _register_repository(self, repository: AsyncRepositoryFactory) -> AsyncRepositoryFactory:
         self._repositories.append(repository)
         return repository
 
@@ -51,4 +52,21 @@ class BaseDI:
 
     @cached_property
     def _configuration(self) -> ApplicationConfiguration:
-        return LoadApplicationConfiguration(self._logging)()
+        return SetApplicationConfiguration(self._logging)()
+
+    @cached_property
+    def _telemetry_provider(self) -> TelemetryProvider:
+        # Constructed once and shared: opentelemetry.trace.set_tracer_provider() is a
+        # global singleton that only accepts its first call, so every component that
+        # needs a tracer must derive it from this one provider via .tracer(<name>)
+        # rather than constructing its own OpenTelemetryProvider.
+        return OpenTelemetryProvider(
+            service_name="risk-analytics",
+            environment=self._configuration.env,
+        )
+
+    async def _shutdown_telemetry(self) -> None:
+        provider = self.__dict__.pop("_telemetry_provider", None)
+        if provider is not None:
+            # TracerProvider.shutdown() flushes buffered spans and can block on I/O.
+            await asyncio.to_thread(provider.shutdown)

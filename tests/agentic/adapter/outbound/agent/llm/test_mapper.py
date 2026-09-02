@@ -1,12 +1,12 @@
+from pycraftcore.application_configuration.enum import ConnectorType, OperationType
+from pycraftcore.application_configuration.model.connector import ApiConnector
+from pycraftcore.application_configuration.model.operation import ApiOperation
+from pycraftcore.authentication import NoAuth
+from pycraftcore.authentication.model.auth_type import AuthType
+from pycraftcore.http.enum import HttpMethod
 from pydantic import SecretStr
 
 from agentic.adapter.outbound.agent.llm.mapper import ModelSettingsMapper
-from agentic_core.infrastructure.application_configuration.enum.connector_type import ConnectorType
-from agentic_core.infrastructure.application_configuration.enum.http_method import HttpMethod
-from agentic_core.infrastructure.application_configuration.model.connector import ApiConnector
-from agentic_core.infrastructure.application_configuration.model.operation import ApiOperation
-from agentic_core.infrastructure.authentication.model.auth_type import AuthType
-from agentic_core.infrastructure.authentication.model.no_auth import NoAuth
 
 
 def make_operation(parameters):
@@ -20,6 +20,7 @@ def make_operation(parameters):
     )
     return ApiOperation(
         name="gpt-model",
+        type=OperationType.api,
         connector=connector,
         endpoint="/chat",
         method=HttpMethod.POST,

@@ -1,4 +1,5 @@
-from typing import Any, Optional, Mapping, Callable, TypeVar, Protocol, Type
+from typing import Any
+from collections.abc import Mapping, Callable
 
 from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.adapter.outbound.agent.enum.role import Role
@@ -12,12 +13,6 @@ from langchain_core.messages import (
 
 from agentic.adapter.outbound.agent.graph.schema.tool_call import ToolCall
 
-T = TypeVar("T")
-
-
-class Handler(Protocol[T]):
-    def __call__(self, __msg: T) -> ConversationMessage: ...
-
 
 class Conversation:
     def __init__(self, messages: list[ConversationMessage] | None = None) -> None:
@@ -26,22 +21,22 @@ class Conversation:
     def append(self, msg: ConversationMessage) -> None:
         self.messages.append(msg)
 
-    def last(self) -> Optional[ConversationMessage]:
+    def last(self) -> ConversationMessage | None:
         return self.messages[-1] if self.messages else None
 
-    def first_user(self) -> Optional[ConversationMessage]:
+    def first_user(self) -> ConversationMessage | None:
         for msg in self.messages:
             if msg.role == Role.USER:
                 return msg
         return None
 
-    def last_assistant(self) -> Optional[ConversationMessage]:
+    def last_assistant(self) -> ConversationMessage | None:
         for msg in reversed(self.messages):
             if msg.role == Role.ASSISTANT:
                 return msg
         return None
 
-    def copy(self) -> "Conversation":
+    def copy(self) -> Conversation:
         return Conversation(list(self.messages))
 
     def to_langchain(self) -> list[BaseMessage]:
@@ -59,14 +54,16 @@ class Conversation:
         }
 
     @classmethod
-    def from_langchain(cls, lc_messages: list[Any]) -> "Conversation":
+    def from_langchain(cls, lc_messages: list[Any]) -> Conversation:
         messages: list[ConversationMessage] = [
             cls().from_langchain_dispatcher[type(message)](message) for message in lc_messages
         ]
         return cls(messages)
 
     @property
-    def from_langchain_dispatcher(self) -> Mapping[Type[BaseMessage], Handler[BaseMessage]]:
+    def from_langchain_dispatcher(
+        self,
+    ) -> Mapping[type[BaseMessage], Callable[[Any], ConversationMessage]]:
         return {
             HumanMessage: self._from_human,
             AIMessage: self._from_assistant,
@@ -118,7 +115,9 @@ class Conversation:
             content=str(message.content) or "",
             tool_calls=[
                 ToolCall(
-                    id=tool_call_["id"], name=tool_call_["name"], args=tool_call_.get("args", {})
+                    id=tool_call_["id"] or "",
+                    name=tool_call_["name"],
+                    args=tool_call_.get("args", {}),
                 )
                 for tool_call_ in (message.tool_calls or [])
             ],

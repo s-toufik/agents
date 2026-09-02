@@ -1,26 +1,23 @@
 import asyncio
 from typing import Any
 
-from pydantic import BaseModel
+from pycraftcore.query_language.port import QueryFactory, QueryHandler
+from pycraftcore.repository.port import AsyncRepository
 
 from agentic.adapter.outbound.agent.tool.schema.sql_tool_input import SQLToolInput
+from agentic.adapter.outbound.agent.tool.schema.tool_input import ToolInput
 from agentic.adapter.outbound.agent.tool.schema.tool_result import ToolResult
-from agentic_core.infrastructure.repository.repository import AsyncSQLRepository
-from agentic_core.infrastructure.repository.sql_handler import (
-    SQLFactory,
-    SQLHandler,
-)
 
 
 class SQLToolCapability:
     def __init__(
         self,
-        repository: AsyncSQLRepository,
-        sql_handler: SQLFactory,
+        repository: AsyncRepository,
+        sql_handler: QueryFactory,
         name: str,
         dialect: str,
         description: str,
-        args_schema: type[BaseModel],
+        args_schema: type[SQLToolInput],
     ) -> None:
         self._repository = repository
         self._sql_handler = sql_handler
@@ -34,7 +31,7 @@ class SQLToolCapability:
         return self._name
 
     @property
-    def args_schema(self) -> type[BaseModel]:
+    def args_schema(self) -> type[ToolInput]:
         return self._args_schema
 
     def schema(self) -> dict[str, Any]:
@@ -56,7 +53,7 @@ class SQLToolCapability:
             )
 
         try:
-            sql_handler: SQLHandler = self._sql_handler(query, dialect=dialect)
+            sql_handler: QueryHandler = self._sql_handler(query, dialect=dialect)
             statements: str = await asyncio.to_thread(sql_handler.transpile)
         except Exception as exception:
             return ToolResult(

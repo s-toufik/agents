@@ -52,7 +52,7 @@ async def test_execute_rejects_with_503_when_at_capacity():
     drain_task.cancel()
     try:
         await drain_task
-    except (asyncio.CancelledError, GeneratorExit):
+    except asyncio.CancelledError, GeneratorExit:
         pass
 
 

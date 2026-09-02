@@ -1,15 +1,11 @@
-from typing import Protocol, Optional
+from typing import Protocol
 
 from fastapi import APIRouter
-
-from agentic_core.infrastructure.application_configuration.model.configuration import (
-    ApplicationConfiguration,
-)
-from agentic_core.infrastructure.logger.port.logger import Logger
+from pycraftcore.application_configuration import ApplicationConfiguration
+from pycraftcore.logger.port import Logger
 
 
 class Container(Protocol):
-
     @property
     def logging(self) -> Logger: ...
 
@@ -20,7 +16,7 @@ class Container(Protocol):
     async def create_routers(self) -> list[APIRouter]: ...
 
     @property
-    async def boot(self) -> tuple[bool, Optional[Exception]]: ...
+    async def boot(self) -> tuple[bool, Exception | None]: ...
 
     async def start(self) -> None: ...
     async def stop(self) -> None: ...

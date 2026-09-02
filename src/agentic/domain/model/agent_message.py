@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from agentic.domain.enum.agent_message_type import AgentMessageType
 from agentic.domain.enum.agent_message_status import MessageStreamType
@@ -9,7 +8,7 @@ from agentic.domain.enum.agent_message_status import MessageStreamType
 class AgentMessage:
     session_id: str
     content: str
-    metadata: Optional[dict[str, str]]
-    error: Optional[str] = None
+    metadata: dict[str, str] | None
+    error: str | None = None
     message_status: MessageStreamType = MessageStreamType.FINAL
     message_type: AgentMessageType = AgentMessageType.TEXT

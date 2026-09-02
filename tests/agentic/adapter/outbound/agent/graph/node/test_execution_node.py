@@ -21,7 +21,9 @@ def make_state_with_tool_calls(tool_calls):
 
 @pytest.mark.asyncio
 async def test_no_tool_calls_returns_state_unchanged_except_last_node():
-    state = AgentState(conversation=Conversation([ConversationMessage(role=Role.USER, content="hi")]))
+    state = AgentState(
+        conversation=Conversation([ConversationMessage(role=Role.USER, content="hi")])
+    )
     registry = MagicMock()
     node = ExecutorNode(registry)
 

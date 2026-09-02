@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class ReflectionAction(str, Enum):
+class ReflectionAction(StrEnum):
     ACCEPT = "accept"
     RETRY = "retry"

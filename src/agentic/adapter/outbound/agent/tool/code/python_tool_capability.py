@@ -1,12 +1,12 @@
 import asyncio
 from typing import Any
 
-from pydantic import BaseModel
+from pycraftcore.runtime import CodeFactory, Code
+from pycraftcore.runtime.configuration import CodeStdout
 
+from agentic.adapter.outbound.agent.tool.schema.tool_input import ToolInput
 from agentic.adapter.outbound.agent.tool.schema.tool_result import ToolResult
 from agentic.adapter.outbound.agent.tool.schema.python_tool_input import PythonToolInput
-from agentic_core.infrastructure.runtime.code import CodeFactory, Code, CodeStdout
-
 
 
 class PythonToolCapability:
@@ -15,8 +15,8 @@ class PythonToolCapability:
         code_factory: CodeFactory,
         name: str,
         description: str,
-        args_schema: type[BaseModel],
-        semaphore: asyncio.Semaphore
+        args_schema: type[PythonToolInput],
+        semaphore: asyncio.Semaphore,
     ) -> None:
         self._code_factory = code_factory
         self._name = name
@@ -24,13 +24,12 @@ class PythonToolCapability:
         self._args_schema = args_schema
         self._semaphore = semaphore
 
-
     @property
     def name(self) -> str:
         return self._name
 
     @property
-    def args_schema(self) -> type[BaseModel]:
+    def args_schema(self) -> type[ToolInput]:
         return self._args_schema
 
     def schema(self) -> dict[str, Any]:
@@ -47,9 +46,7 @@ class PythonToolCapability:
         if not code:
             return ToolResult(tool_name=self.name, id=call_id, output="", error="No code provided.")
 
-        code_executor_proc: Code = self._code_factory(
-            code=code,
-            code_template=None)
+        code_executor_proc: Code = self._code_factory(code=code, code_template=None)
 
         async with self._semaphore:
             code_result: CodeStdout = await code_executor_proc.execute()

@@ -1,11 +1,9 @@
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
 
-from mypy.types import TypeVar
-from pydantic import BaseModel
-
+from agentic.adapter.outbound.agent.tool.schema.tool_input import ToolInput
 from agentic.adapter.outbound.agent.tool.schema.tool_result import ToolResult
 
-T = TypeVar("T")
+T = TypeVar("T", bound=ToolInput)
 
 
 class ToolCapability(Protocol):
@@ -13,9 +11,8 @@ class ToolCapability(Protocol):
     def name(self) -> str: ...
 
     @property
-    def args_schema(self) -> type[BaseModel]: ...
+    def args_schema(self) -> type[ToolInput]: ...
 
-    @classmethod
-    def schema(cls) -> dict[str, Any]: ...
+    def schema(self) -> dict[str, Any]: ...
 
     async def execute(self, request: T) -> ToolResult: ...

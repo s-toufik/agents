@@ -10,8 +10,8 @@ class FeedbackNode(Node):
     def __init__(self, prompt_service: PromptService) -> None:
         self._prompt_service = prompt_service
 
-    async def __call__(self, graph_state: GraphState) -> GraphState:
-        state: AgentState = self._unpack(graph_state)
+    async def __call__(self, state: GraphState) -> GraphState:
+        state: AgentState = self._unpack(state)
 
         critique: str = (
             state.reflection.critique if state.reflection else "No specific critique provided."

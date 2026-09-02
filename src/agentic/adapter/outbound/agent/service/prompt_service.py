@@ -56,12 +56,8 @@ Be concise and do not repeat unnecessary reasoning.
 
     @staticmethod
     def reflection_system_prompt(output_format: str):
-        return PromptService._REFLECTION_SYSTEM_PROMPT.format(
-            output_format=output_format
-        )
+        return PromptService._REFLECTION_SYSTEM_PROMPT.format(output_format=output_format)
 
     @staticmethod
     def feedback_system_prompt(critique: str):
-        return PromptService._FEEDBACK_SYSTEM_PROMPT.format(
-            critiques=critique
-        )
+        return PromptService._FEEDBACK_SYSTEM_PROMPT.format(critiques=critique)

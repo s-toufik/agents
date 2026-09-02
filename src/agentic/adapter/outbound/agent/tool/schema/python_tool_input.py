@@ -1,14 +1,7 @@
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import Field
+
+from agentic.adapter.outbound.agent.tool.schema.tool_input import ToolInput
 
 
-class PythonToolInput(BaseModel):
-    _call_id: str = PrivateAttr()
+class PythonToolInput(ToolInput):
     code: str = Field(..., description="Python source code to run in a sandbox.")
-
-    @property
-    def call_id(self):
-        return self._call_id
-
-    @call_id.setter
-    def call_id(self, value):
-        self._call_id = value

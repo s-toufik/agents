@@ -2,8 +2,10 @@ import asyncio
 import traceback
 from asyncio import Task
 from datetime import datetime
-from typing import Callable, AsyncIterator
+from collections.abc import Callable, AsyncIterator
 
+from pycraftcore.http.context.request_context import request_id_context, request_context
+from pycraftcore.logger.port import Logger
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
@@ -11,22 +13,17 @@ from starlette.responses import StreamingResponse
 from agentic.adapter.inbound.web.schema.agent_message_schema import AgentMessageSchema
 from agentic.adapter.inbound.web.schema.agent_message_stream_schema import AgentMessageStreamSchema
 from agentic.adapter.inbound.web.schema.agent_request_schema import AgentRequestSchema
-from agentic.application.port.inbound.stream_agent_port import StramAgentPort
+from agentic.application.port.inbound.stream_agent_port import StreamAgentPort
 from agentic.application.port.outbound.sse_queue_port import SSEQueuePort
 from agentic.domain.enum.agent_message_status import MessageStreamType
 from agentic.domain.model.agent_message_stream import AgentMessageStream
 from agentic.domain.model.agent_request import AgentRequest
-from agentic_core.infrastructure.http.context.request_id_context import (
-    request_id_context,
-    request_context,
-)
-from agentic_core.infrastructure.logger.port.logger import Logger
 
 
 class StreamAgentController:
     def __init__(
         self,
-        use_case: StramAgentPort,
+        use_case: StreamAgentPort,
         stream_events: Callable[[], SSEQueuePort],
         logger: Logger,
         max_concurrent_streams: int = 200,

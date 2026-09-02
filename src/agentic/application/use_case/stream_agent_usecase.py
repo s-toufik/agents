@@ -1,15 +1,20 @@
 import contextvars
 import traceback
-from typing import Optional
 
-from agentic.application.port.outbound.agent_port import AgentPort
+from pycraftcore.logger.port import Logger
+
+from agentic.application.port.outbound.agent_port import AgentPort, AgentUnavailableError
 from agentic.application.port.outbound.sse_queue_port import SSEQueuePort
 from agentic.domain.model.agent_message import AgentMessage
 from agentic.domain.model.agent_request import AgentRequest
-from agentic_core.infrastructure.logger.port.logger import Logger
 
-_current_events: contextvars.ContextVar[Optional[SSEQueuePort]] = contextvars.ContextVar(
+_current_events: contextvars.ContextVar[SSEQueuePort | None] = contextvars.ContextVar(
     "current_events", default=None
+)
+
+AGENT_UNAVAILABLE_MESSAGE = (
+    "The assistant is temporarily unavailable due to repeated upstream failures. "
+    "Please try again in a moment."
 )
 
 
@@ -29,6 +34,9 @@ class StreamAgentUseCase:
         try:
             agent_message: AgentMessage = await self._agent.run(request)
             await events.final(agent_message.content, metadata=agent_message.metadata)
+        except AgentUnavailableError as exception:
+            self._logger.warning(f"Agent unavailable while handling request: {exception}")
+            await events.error(AGENT_UNAVAILABLE_MESSAGE)
         except Exception as exception:
             traceback.print_exc()
             traceback_str: str = "".join(traceback.format_exception(exception))

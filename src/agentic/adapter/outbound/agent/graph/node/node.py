@@ -7,7 +7,7 @@ from agentic.adapter.outbound.agent.service.state_serialization import unpack_st
 
 class Node(ABC):
     @abstractmethod
-    async def __call__(self, graph_state: GraphState) -> GraphState: ...
+    async def __call__(self, state: GraphState) -> GraphState | str: ...
 
     @staticmethod
     def _unpack(graph_state: GraphState) -> AgentState:

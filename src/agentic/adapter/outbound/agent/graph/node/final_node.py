@@ -5,8 +5,8 @@ from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 
 
 class FinalNode(Node):
-    async def __call__(self, graph_state: GraphState) -> GraphState:
-        state: AgentState = self._unpack(graph_state)
+    async def __call__(self, state: GraphState) -> GraphState:
+        state: AgentState = self._unpack(state)
 
         last: ConversationMessage | None = state.conversation.last_assistant()
         state.final_answer = last.content if last else "No answer was produced."

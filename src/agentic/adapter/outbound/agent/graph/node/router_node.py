@@ -4,9 +4,9 @@ from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 
 
 class RouterNode(Node):
-    async def __call__(self, graph_state: GraphState) -> str:
+    async def __call__(self, state: GraphState) -> str:
 
-        state: AgentState = self._unpack(graph_state)
+        state: AgentState = self._unpack(state)
 
         if state.iteration >= state.max_iterations:
             return "final"

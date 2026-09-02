@@ -1,5 +1,5 @@
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class GraphState(TypedDict):
-    state: dict
+    state: dict[str, Any]

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from agentic.adapter.outbound.agent.graph.agent_graph import AgentGraph
 from agentic.adapter.outbound.agent.graph.node.execution_node import ExecutorNode
@@ -8,7 +8,6 @@ from agentic.adapter.outbound.agent.graph.node.memory_node import MemoryNode
 from agentic.adapter.outbound.agent.graph.node.planner_node import PlannerNode
 from agentic.adapter.outbound.agent.graph.node.reflection_node import ReflectionNode
 from agentic.adapter.outbound.agent.graph.node.router_node import RouterNode
-from agentic.adapter.outbound.agent.graph.node.streaming_planner_node import StreamingPlannerNode
 from agentic.adapter.outbound.agent.graph.schema.agent_state import AgentState
 from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 from agentic.adapter.outbound.agent.service.prompt_service import PromptService
@@ -23,14 +22,15 @@ def build_agent(
     max_tokens: int = 8_000,
     max_iterations: int = 6,
     use_streaming: bool = False,
-    on_token: Optional[Any] = None,
+    on_token: Any | None = None,
     checkpointer: Any = None,
 ) -> tuple[Any, GraphState]:
 
-    planner: PlannerNode | StreamingPlannerNode = (
-        StreamingPlannerNode(planner_llm, tool_registry, PromptService(), on_token)
-        if use_streaming
-        else PlannerNode(planner_llm, tool_registry, PromptService())
+    planner = PlannerNode(
+        llm=planner_llm,
+        tool_registry=tool_registry,
+        prompt_service=PromptService(),
+        on_token=on_token if use_streaming else None,
     )
 
     graph = AgentGraph(

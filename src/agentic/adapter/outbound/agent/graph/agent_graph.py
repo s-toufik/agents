@@ -1,4 +1,5 @@
 from typing import Any
+from collections.abc import Hashable
 
 from langgraph.graph import END, StateGraph
 
@@ -9,14 +10,13 @@ from agentic.adapter.outbound.agent.graph.node.memory_node import MemoryNode
 from agentic.adapter.outbound.agent.graph.node.planner_node import PlannerNode
 from agentic.adapter.outbound.agent.graph.node.reflection_node import ReflectionNode
 from agentic.adapter.outbound.agent.graph.node.router_node import RouterNode
-from agentic.adapter.outbound.agent.graph.node.streaming_planner_node import StreamingPlannerNode
 from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 
 
 class AgentGraph:
     def __init__(
         self,
-        planner: PlannerNode | StreamingPlannerNode,
+        planner: PlannerNode,
         router: RouterNode,
         executor: ExecutorNode,
         memory: MemoryNode,
@@ -34,7 +34,7 @@ class AgentGraph:
 
     # noinspection PyTypeChecker
     def build(self, checkpointer: Any = None) -> Any:
-        graph = StateGraph(GraphState)
+        graph = StateGraph(GraphState)  # ty: ignore[invalid-argument-type]
         graph.add_node("planner", self._planner)
         graph.add_node("executor", self._executor)
         graph.add_node("memory", self._memory)
@@ -46,12 +46,12 @@ class AgentGraph:
         graph.set_entry_point("memory")
 
         # Only planner and reflection still need runtime branching.
-        planner_targets = {
+        planner_targets: dict[Hashable, str] = {
             "executor": "executor",
             "reflection": "memory_pre_reflection",  # planner's "no tool" branch
             "final": "final",
         }
-        reflection_targets = {
+        reflection_targets: dict[Hashable, str] = {
             "feedback": "feedback",
             "final": "final",
         }

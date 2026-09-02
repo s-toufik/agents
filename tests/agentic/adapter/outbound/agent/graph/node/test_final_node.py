@@ -11,9 +11,7 @@ from agentic.adapter.outbound.agent.service.state_serialization import pack_stat
 @pytest.mark.asyncio
 async def test_final_answer_set_from_last_assistant_message():
     state = AgentState(
-        conversation=Conversation(
-            [ConversationMessage(role=Role.ASSISTANT, content="the answer")]
-        )
+        conversation=Conversation([ConversationMessage(role=Role.ASSISTANT, content="the answer")])
     )
 
     result = unpack_state(await FinalNode()(pack_state(state)))

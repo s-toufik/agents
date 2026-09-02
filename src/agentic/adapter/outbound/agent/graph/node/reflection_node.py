@@ -16,9 +16,9 @@ class ReflectionNode(Node):
         self._llm = llm
         self._prompt_service = prompt_service
 
-    async def __call__(self, graph_state: GraphState) -> GraphState:
+    async def __call__(self, state: GraphState) -> GraphState:
 
-        state: AgentState = self._unpack(graph_state)
+        state: AgentState = self._unpack(state)
 
         last: ConversationMessage | None = state.conversation.last_assistant()
         answer: str = last.content if last else "(no assistant answer found)"

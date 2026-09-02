@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -7,7 +6,7 @@ class ToolResult:
     tool_name: str
     id: str
     output: str
-    error: Optional[str] = None
+    error: str | None = None
 
     @property
     def content(self) -> str:

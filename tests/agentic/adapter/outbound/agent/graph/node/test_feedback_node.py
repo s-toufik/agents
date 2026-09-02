@@ -35,6 +35,4 @@ async def test_uses_fallback_critique_when_reflection_is_none():
 
     await node(pack_state(state))
 
-    prompt_service.feedback_system_prompt.assert_called_once_with(
-        "No specific critique provided."
-    )
+    prompt_service.feedback_system_prompt.assert_called_once_with("No specific critique provided.")

@@ -1,7 +1,12 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from agentic.application.use_case.stream_agent_usecase import StreamAgentUseCase, on_token
+from agentic.application.port.outbound.agent_port import AgentUnavailableError
+from agentic.application.use_case.stream_agent_usecase import (
+    AGENT_UNAVAILABLE_MESSAGE,
+    StreamAgentUseCase,
+    on_token,
+)
 from agentic.domain.model.agent_message import AgentMessage
 from agentic.domain.model.agent_request import AgentRequest
 
@@ -45,6 +50,30 @@ async def test_agent_failure_pushes_error_then_still_completes():
     events.error.assert_awaited_once()
     assert "boom" in events.error.call_args[0][0]
     events.complete.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_agent_unavailable_pushes_friendly_message_not_a_traceback():
+    # AgentUnavailableError is the application-level exception any AgentPort
+    # implementation must raise for a transient "service unavailable" condition
+    # (e.g. LangAgent translates pycraftcore's CircuitBreakerOpenException into
+    # this) -- the use case must not know about the concrete infra exception.
+    agent = MagicMock()
+    agent.run = AsyncMock(side_effect=AgentUnavailableError("circuit 'llm-gateway' is open"))
+    events = MagicMock()
+    events.final = AsyncMock()
+    events.complete = AsyncMock()
+    events.error = AsyncMock()
+    logger = MagicMock()
+    use_case = StreamAgentUseCase(agent, logger=logger)
+
+    await use_case.execute(make_request(), events)
+
+    events.final.assert_not_called()
+    events.error.assert_awaited_once_with(AGENT_UNAVAILABLE_MESSAGE)
+    events.complete.assert_awaited_once()
+    logger.warning.assert_called_once()
+    assert "llm-gateway" in logger.warning.call_args[0][0]
 
 
 @pytest.mark.asyncio

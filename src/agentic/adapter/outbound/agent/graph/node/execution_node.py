@@ -14,15 +14,15 @@ class ExecutorNode(Node):
     def __init__(self, tool_registry: ToolRegistry) -> None:
         self._tool_registry = tool_registry
 
-    async def __call__(self, graph_state: GraphState) -> GraphState:
-        state: AgentState = self._unpack(graph_state)
+    async def __call__(self, state: GraphState) -> GraphState:
+        state: AgentState = self._unpack(state)
 
         last_assistant: ConversationMessage | None = state.conversation.last_assistant()
         if not last_assistant or not last_assistant.tool_calls:
             state.last_node = "executor"
             return self._pack(state)
 
-        results: tuple[ToolResult, ...] = await asyncio.gather(
+        results: list[ToolResult] = await asyncio.gather(
             *[self._run(tool_call) for tool_call in last_assistant.tool_calls]
         )
 

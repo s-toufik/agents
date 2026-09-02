@@ -3,9 +3,10 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+from pycraftcore.runtime.configuration import CodeStdout
+
 from agentic.adapter.outbound.agent.tool.code.python_tool_capability import PythonToolCapability
 from agentic.adapter.outbound.agent.tool.schema.python_tool_input import PythonToolInput
-from agentic_core.infrastructure.runtime.code import CodeStdout
 
 
 def make_capability(code_factory, semaphore=None):

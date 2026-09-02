@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from agentic.adapter.outbound.agent.graph.schema.tool_call import ToolCall
@@ -7,7 +5,7 @@ from agentic.adapter.outbound.agent.graph.schema.tool_call import ToolCall
 
 class PlannerDecision(BaseModel):
     tool_calls: list[ToolCall] = Field(default_factory=list)
-    answer: Optional[str] = None
+    answer: str | None = None
 
     @property
     def wants_tools(self) -> bool:

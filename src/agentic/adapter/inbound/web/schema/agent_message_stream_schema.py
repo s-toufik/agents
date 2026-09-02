@@ -8,4 +8,4 @@ class AgentMessageStreamSchema(BaseModel):
     content: str
 
     def serialize(self) -> bytes:
-        return (f"event_type: {self.type.value}\ncontent: {self.content}\n").encode("utf-8")
+        return (f"event_type: {self.type.value}\ncontent: {self.content}\n").encode()

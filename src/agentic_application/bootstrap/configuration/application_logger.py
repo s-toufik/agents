@@ -1,9 +1,9 @@
-from typing import cast, Optional
+from typing import cast
 
-from agentic_core.infrastructure.logger.port.logger import Logger
+from pycraftcore.logger.port import Logger
 
 
-def create_logger(logger: Optional[Logger]) -> Logger:
+def create_logger(logger: Logger | None) -> Logger:
     if logger is None:
         from logging import getLogger
 

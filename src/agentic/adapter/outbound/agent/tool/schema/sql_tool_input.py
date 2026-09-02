@@ -1,15 +1,8 @@
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import Field
+
+from agentic.adapter.outbound.agent.tool.schema.tool_input import ToolInput
 
 
-class SQLToolInput(BaseModel):
-    _call_id: str = PrivateAttr()
+class SQLToolInput(ToolInput):
     query: str = Field(..., description="SQL query to execute.")
     dialect: str = Field(..., description="sqlglot source dialect.")
-
-    @property
-    def call_id(self):
-        return self._call_id
-
-    @call_id.setter
-    def call_id(self, value):
-        self._call_id = value

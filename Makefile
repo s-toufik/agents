@@ -1,10 +1,21 @@
 venv:
 	uv venv
 
-clear_env_cache:
+clean_dependency_cache:
+	uv cache clear
+
+clear_dependency_cache:
 	uv cache clear
 
 install:
+	uv sync
+
+update_dependency:
+ifdef PACKAGE
+	uv lock --upgrade-package $(PACKAGE)
+else
+	uv lock --upgrade
+endif
 	uv sync
 
 install_dev:
@@ -16,14 +27,19 @@ test:
 lint:
 	uv run ruff check .
 
-link:
-	uv run pyright .
+fix:
+	uv run ruff check --fix .
 
-typing:
-	uv run mypy .
+typecheck:
+	uv run ty check
 
 format:
 	uv run ruff format .
+
+check:
+	$(MAKE) lint
+	$(MAKE) typecheck
+	$(MAKE) test
 
 git_init:
 	git init

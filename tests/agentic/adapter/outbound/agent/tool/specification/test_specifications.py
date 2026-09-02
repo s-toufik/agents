@@ -1,10 +1,11 @@
+from pycraftcore.query_language.constants import FORBIDDEN_SQL_EXPRESSIONS
+from pycraftcore.runtime.adapter.python.adapter import PYTHON_ALLOWLIST
+
 from agentic.adapter.outbound.agent.tool.specification import python_sandbox, user_sqlite_repository
-from agentic_core.infrastructure.repository.sql_handler import FORBIDDEN_STATEMENTS
-from agentic_core.infrastructure.runtime.python.adapter import ALLOWLIST
 
 
 def test_python_sandbox_description_mentions_every_allowed_module():
-    for module in ALLOWLIST:
+    for module in PYTHON_ALLOWLIST:
         assert module in python_sandbox.description
 
 
@@ -15,7 +16,7 @@ def test_python_sandbox_args_schema_is_python_tool_input():
 
 
 def test_user_sqlite_repository_description_mentions_every_forbidden_statement():
-    for statement in FORBIDDEN_STATEMENTS:
+    for statement in FORBIDDEN_SQL_EXPRESSIONS:
         assert statement.__name__ in user_sqlite_repository.description
 
 

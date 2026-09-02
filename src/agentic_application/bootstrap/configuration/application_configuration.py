@@ -1,32 +1,25 @@
 import os
-from typing import Optional
 
 import dotenv
 from pathlib import Path
 
-from agentic_application.bootstrap.configuration.application_logger import create_logger
-from agentic_core.infrastructure.application_configuration.adapter.load_configuration import (
-    LoadConfiguration,
-)
-from agentic_core.infrastructure.application_configuration.adapter.omega_configuration_reader import (
-    OmegaConfigurationReader,
-)
-
-from agentic_core.infrastructure.application_configuration.enum.run_type_environment import (
-    RunTypeEnvironment,
-)
-from agentic_core.infrastructure.application_configuration.model.configuration import (
+from pycraftcore.application_configuration import (
     ApplicationConfiguration,
-)
-from agentic_core.infrastructure.application_configuration.port.configuration import Configuration
-from agentic_core.infrastructure.application_configuration.port.configuration_reader import (
     ConfigurationReader,
+    Configuration,
 )
-from agentic_core.infrastructure.logger.port.logger import Logger
+from pycraftcore.application_configuration.adapter import (
+    OmegaConfigurationReader,
+    LoadApplicationConfiguration,
+)
+from pycraftcore.application_configuration.enum import RunTypeEnvironment
+from pycraftcore.logger.port import Logger
+
+from agentic_application.bootstrap.configuration.application_logger import create_logger
 
 
-class LoadApplicationConfiguration:
-    def __init__(self, logger: Optional[Logger] = None):
+class SetApplicationConfiguration:
+    def __init__(self, logger: Logger | None = None):
         self._logger = create_logger(logger)
 
     def __call__(self, *args, **kwargs) -> ApplicationConfiguration:
@@ -44,7 +37,9 @@ class LoadApplicationConfiguration:
             run_type_environment, configuration_directory
         )
 
-        configuration_loader: Configuration = LoadConfiguration(configuration_reader, self._logger)
+        configuration_loader: Configuration = LoadApplicationConfiguration(
+            configuration_reader, self._logger
+        )
         configuration = configuration_loader.load()
         if not configuration:
             exception = ValueError("No configuration loaded")
