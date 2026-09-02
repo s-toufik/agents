@@ -7,7 +7,7 @@ from agentic.adapter.outbound.agent.graph.schema.agent_state import AgentState
 from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 from agentic.adapter.outbound.agent.service.state_serialization import pack_state, unpack_state
-from agentic.application.port.outbound.agent_port import AgentUnavailableError
+from agentic.domain.exception.agent_unvailable_exception import AgentUnavailableException
 from agentic.domain.model.agent_message import AgentMessage
 from agentic.domain.model.agent_request import AgentRequest
 
@@ -40,16 +40,8 @@ class LangAgent:
         try:
             return await graph.ainvoke(pack_state(state), config=config)
         except ModelError as exception:
-            # langchain_core's own provider-agnostic exception hierarchy: every
-            # chat-model integration (not just OpenAI) raises subclasses of
-            # ModelError for its own SDK errors, each correctly flagged
-            # `is_retryable` by condition (connection/timeout/rate-limit/5xx
-            # are retryable; auth/permission/invalid-request/not-found aren't).
-            # Whatever caused this -- our own circuit breaker rejecting, a real
-            # network outage, the provider rate-limiting us -- "retryable"
-            # means the same thing to a caller: try again shortly.
             if exception.is_retryable:
-                raise AgentUnavailableError(str(exception)) from exception
+                raise AgentUnavailableException(str(exception)) from exception
             raise
 
     @staticmethod

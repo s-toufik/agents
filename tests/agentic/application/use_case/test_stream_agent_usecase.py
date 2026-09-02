@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from agentic.application.port.outbound.agent_port import AgentUnavailableError
+from agentic.domain.exception.agent_unvailable_exception import AgentUnavailableException
 from agentic.application.use_case.stream_agent_usecase import (
     AGENT_UNAVAILABLE_MESSAGE,
     StreamAgentUseCase,
@@ -59,7 +59,7 @@ async def test_agent_unavailable_pushes_friendly_message_not_a_traceback():
     # (e.g. LangAgent translates pycraftcore's CircuitBreakerOpenException into
     # this) -- the use case must not know about the concrete infra exception.
     agent = MagicMock()
-    agent.run = AsyncMock(side_effect=AgentUnavailableError("circuit 'llm-gateway' is open"))
+    agent.run = AsyncMock(side_effect=AgentUnavailableException("circuit 'llm-gateway' is open"))
     events = MagicMock()
     events.final = AsyncMock()
     events.complete = AsyncMock()

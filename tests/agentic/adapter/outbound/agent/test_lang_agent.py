@@ -9,7 +9,7 @@ from agentic.adapter.outbound.agent.graph.schema.agent_state import AgentState
 from agentic.adapter.outbound.agent.graph.schema.conversation import Conversation
 from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.adapter.outbound.agent.service.state_serialization import pack_state
-from agentic.application.port.outbound.agent_port import AgentUnavailableError
+from agentic.domain.exception.agent_unvailable_exception import AgentUnavailableException
 from agentic.domain.model.agent_request import AgentRequest
 
 
@@ -85,7 +85,7 @@ async def test_retryable_model_error_is_translated_to_agent_unavailable_error():
     agent = LangAgent({"gpt": graph})
     request = AgentRequest(message="hi", model_name="gpt", request_id="s1")
 
-    with pytest.raises(AgentUnavailableError, match="llm-gateway is unreachable"):
+    with pytest.raises(AgentUnavailableException, match="llm-gateway is unreachable"):
         await agent.run(request)
 
 

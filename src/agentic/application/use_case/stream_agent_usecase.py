@@ -3,8 +3,9 @@ import traceback
 
 from pycraftcore.logger.port import Logger
 
-from agentic.application.port.outbound.agent_port import AgentPort, AgentUnavailableError
+from agentic.application.port.outbound.agent_port import AgentPort
 from agentic.application.port.outbound.sse_queue_port import SSEQueuePort
+from agentic.domain.exception.agent_unvailable_exception import AgentUnavailableException
 from agentic.domain.model.agent_message import AgentMessage
 from agentic.domain.model.agent_request import AgentRequest
 
@@ -34,7 +35,7 @@ class StreamAgentUseCase:
         try:
             agent_message: AgentMessage = await self._agent.run(request)
             await events.final(agent_message.content, metadata=agent_message.metadata)
-        except AgentUnavailableError as exception:
+        except AgentUnavailableException as exception:
             self._logger.warning(f"Agent unavailable while handling request: {exception}")
             await events.error(AGENT_UNAVAILABLE_MESSAGE)
         except Exception as exception:
