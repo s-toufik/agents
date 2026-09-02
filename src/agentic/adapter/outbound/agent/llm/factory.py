@@ -24,4 +24,5 @@ class LLMChat:
             max_tokens=self._model_parameters.max_output_tokens,
             temperature=self._model_parameters.temperature,
             streaming=self._model_parameters.use_streaming,
+            max_retries=0,
         )

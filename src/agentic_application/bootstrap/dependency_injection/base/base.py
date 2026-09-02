@@ -57,7 +57,7 @@ class BaseDI:
     @cached_property
     def _telemetry_provider(self) -> TelemetryProvider:
         return OpenTelemetryProvider(
-            service_name="risk-analytics",
+            service_name="agent-service",
             environment=self._configuration.env,
         )
 

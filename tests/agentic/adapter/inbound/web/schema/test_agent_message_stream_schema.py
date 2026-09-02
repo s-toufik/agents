@@ -14,7 +14,10 @@ def test_serialize_for_every_stream_type(stream_type):
 
     text = schema.serialize().decode("utf-8")
 
-    assert text == f'event: {stream_type.value}\ndata: {{"type":"{stream_type.value}","content":"payload"}}\n\n'
+    assert (
+        text
+        == f'event: {stream_type.value}\ndata: {{"type":"{stream_type.value}","content":"payload"}}\n\n'
+    )
 
 
 def test_serialize_preserves_multiline_content_without_breaking_framing():

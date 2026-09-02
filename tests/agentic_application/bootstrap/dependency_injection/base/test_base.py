@@ -38,7 +38,7 @@ def test_telemetry_provider_uses_the_configured_environment():
         _ = di._telemetry_provider
 
         mock_provider_cls.assert_called_once_with(
-            service_name="risk-analytics", environment="deploy"
+            service_name="agent-service", environment="deploy"
         )
 
 
