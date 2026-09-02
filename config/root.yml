@@ -13,6 +13,8 @@ application_configuration:
       checkpointer: ${connector.checkpointer}
     telemetry:
       open_telemetry: ${connector.telemetry}
+    mcp:
+      tools: ${connector.tools}
 
   operation:
     gpt_oss_20b: ${operation.gpt_oss_20b}

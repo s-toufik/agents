@@ -12,7 +12,7 @@ from agentic.adapter.outbound.agent.graph.schema.agent_state import AgentState
 from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 from agentic.adapter.outbound.agent.service.prompt_service import PromptService
 from agentic.adapter.outbound.agent.service.state_serialization import pack_state
-from agentic.adapter.outbound.agent.tool.tool_registery import ToolRegistry
+from agentic.adapter.outbound.agent_tool.tool_registery import ToolRegistry
 
 
 def build_agent(

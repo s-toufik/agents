@@ -7,7 +7,7 @@ from agentic.adapter.outbound.agent.graph.schema.agent_state import AgentState
 from agentic.adapter.outbound.agent.graph.schema.conversation import Conversation
 from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.adapter.outbound.agent.graph.schema.tool_call import ToolCall
-from agentic.adapter.outbound.agent.tool.schema.tool_result import ToolResult
+from agentic.adapter.outbound.agent_tool.schema.tool_result import ToolResult
 from agentic.adapter.outbound.agent.service.state_serialization import pack_state, unpack_state
 
 

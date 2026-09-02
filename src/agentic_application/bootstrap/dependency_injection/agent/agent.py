@@ -1,10 +1,13 @@
-from pycraftcore.application_configuration.model.connector import ApiConnector, DatabaseConnector
+from pycraftcore.application_configuration.model.connector import (
+    ApiConnector,
+    DatabaseConnector,
+    McpConnector,
+)
 from pycraftcore.application_configuration.model.operation import ApiOperation
 from pycraftcore.circuit_breaker.configuration import CircuitBreakerSettings
 from pycraftcore.http.configuration import HttpClientSettings, LimitsSettings
 from pycraftcore.http.policy.http_error_policy import is_retryable, is_business_error
 from pycraftcore.query_language.adapter import SqlHandlerFactory
-from pycraftcore.query_language.port import QueryFactory
 from pycraftcore.repository.adapter import SqliteSettingsMapper, SQLiteRepositoryFactory
 from pycraftcore.repository.port import AsyncRepositoryFactory, AsyncRepository
 
@@ -29,11 +32,22 @@ from agentic.adapter.outbound.agent.graph.build_agent import build_agent
 from agentic.adapter.outbound.agent.llm.factory import LLMChat
 from agentic.adapter.outbound.agent.llm.mapper import ModelSettingsMapper
 from agentic.adapter.outbound.agent.llm.schema import ModelConnector, ModelParameters
-from agentic.adapter.outbound.agent.tool.code.python_tool_capability import PythonToolCapability
-from agentic.adapter.outbound.agent.tool.specification import user_sqlite_repository, python_sandbox
-from agentic.adapter.outbound.agent.tool.sql.sql_tool_capability import SQLToolCapability
-from agentic.adapter.outbound.agent.tool.tool_capabilities import ToolCapability
-from agentic.adapter.outbound.agent.tool.tool_registery import ToolRegistry
+from mcp.server.mcpserver import MCPServer
+
+from agentic.adapter.outbound.agent_tool.code.python_tool_capability import PythonToolCapability
+from agentic.adapter.outbound.agent_tool.mcp.mcp_client_factory import McpClientFactory
+from agentic.adapter.outbound.agent_tool.mcp.mcp_in_process_client_factory import (
+    McpInProcessClientFactory,
+)
+from agentic.adapter.outbound.agent_tool.mcp.mcp_tool_provider import McpToolProvider
+from agentic.adapter.outbound.agent_tool.mcp.server.mcp_tool_server_factory import (
+    build_mcp_server,
+    register_tools,
+)
+from agentic.adapter.outbound.agent_tool.specification import user_sqlite_repository, python_sandbox
+from agentic.adapter.outbound.agent_tool.sql.sql_tool_capability import SQLToolCapability
+from agentic.adapter.outbound.agent_tool.tool_capabilities import ToolCapability
+from agentic.adapter.outbound.agent_tool.tool_registery import ToolRegistry
 from agentic.application.use_case.stream_agent_usecase import on_token
 
 
@@ -79,6 +93,57 @@ class AgentDI(BaseDI):
         if client is not None:
             await client.aclose()
 
+    @cached_property
+    def _mcp_client_factory(self) -> McpClientFactory:
+        # For external MCP server
+        connector: McpConnector = self._configuration.connector.mcp("tools")
+        return McpClientFactory(connector)
+
+    async def _close_mcp_client_factory(self) -> None:
+        factory = self.__dict__.pop("_mcp_client_factory", None)
+        if factory is not None:
+            await factory.close()
+
+    @cached_property
+    def _mcp_server(self) -> MCPServer:
+        return build_mcp_server("agentic")
+
+    async def _register_mcp_tools(self) -> None:
+        register_tools(self._mcp_server, await self._sql_tool_capability(), self._python_tool_capability())
+
+    async def _sql_tool_capability(self) -> SQLToolCapability:
+        sql_repository: AsyncRepository = await self._sqlite_repository(repository_name="users")
+        return SQLToolCapability(
+            repository=sql_repository,
+            sql_handler=SqlHandlerFactory(),
+            dialect=user_sqlite_repository.dialect,
+            name=user_sqlite_repository.name,
+            description=user_sqlite_repository.description,
+            args_schema=user_sqlite_repository.args_schema,
+        )
+
+    def _python_tool_capability(self) -> PythonToolCapability:
+        settings = SafeCodeSettings(
+            code_timeout=python_sandbox.timeout,
+            max_memory_mb=python_sandbox.max_memory_mb,
+        )
+        return PythonToolCapability(
+            code_factory=PythonSafeCodeFactory(settings=settings),
+            name=python_sandbox.name,
+            description=python_sandbox.description,
+            args_schema=python_sandbox.args_schema,
+            semaphore=asyncio.Semaphore(python_sandbox.max_concurrency),
+        )
+
+    @cached_property
+    def _mcp_in_process_client_factory(self) -> McpInProcessClientFactory:
+        return McpInProcessClientFactory(self._mcp_server)
+
+    async def _close_mcp_in_process_client_factory(self) -> None:
+        factory = self.__dict__.pop("_mcp_in_process_client_factory", None)
+        if factory is not None:
+            await factory.close()
+
     async def _sqlite_connection(self, repository_name) -> aiosqlite.Connection:
         connector: DatabaseConnector = self._configuration.connector.database(repository_name)
         settings = SqliteSettingsMapper(connector)()
@@ -93,31 +158,15 @@ class AgentDI(BaseDI):
         return await factory.connect()
 
     async def _tool_registry(self) -> ToolRegistry:
-        sql_handler: QueryFactory = SqlHandlerFactory()
-        sql_repository: AsyncRepository = await self._sqlite_repository(repository_name="users")
-        user_sqlite_too: ToolCapability = SQLToolCapability(
-            repository=sql_repository,
-            sql_handler=sql_handler,
-            dialect=user_sqlite_repository.dialect,
-            name=user_sqlite_repository.name,
-            description=user_sqlite_repository.description,
-            args_schema=user_sqlite_repository.args_schema,
-        )
+        # The graph consumes tools exclusively through MCP -- today that's this
+        # in-process, self-hosted server (SQL query, Python sandbox); a genuinely
+        # external MCP server, via _mcp_client_factory, would merge in the same way.
+        await self._mcp_in_process_client_factory.start()
+        mcp_tools: list[ToolCapability] = await McpToolProvider(
+            self._mcp_in_process_client_factory
+        ).tools()
 
-        settings: SafeCodeSettings = SafeCodeSettings(
-            code_timeout=python_sandbox.timeout,
-            max_memory_mb=python_sandbox.max_memory_mb,
-        )
-        code_semaphore: asyncio.Semaphore = asyncio.Semaphore(python_sandbox.max_concurrency)
-        code_runner: ToolCapability = PythonToolCapability(
-            code_factory=PythonSafeCodeFactory(settings=settings),
-            name=python_sandbox.name,
-            description=python_sandbox.description,
-            args_schema=python_sandbox.args_schema,
-            semaphore=code_semaphore,
-        )
-
-        return ToolRegistry(tools=[user_sqlite_too, code_runner])
+        return ToolRegistry(tools=mcp_tools)
 
     def _llm_for_model(self, model_name: str, streaming: bool) -> ChatOpenAI:
         operation: ApiOperation = self._configuration.operation.api(model_name)

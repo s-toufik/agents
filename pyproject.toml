@@ -40,6 +40,8 @@ dependencies = [
     "langchain-core",
     "langchain-openai",
     "httpx",
+    "httpx2",
+    "mcp",
     "pycraftcore"
 ]
 
@@ -55,6 +57,9 @@ dev = [
     "ty",
     "pre-commit"
 ]
+
+[tool.uv.sources]
+pycraftcore = { path = "../pycraftcore", editable = true }
 
 [tool.ruff]
 line-length = 100

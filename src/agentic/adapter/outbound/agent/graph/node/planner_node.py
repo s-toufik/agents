@@ -13,7 +13,7 @@ from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 from agentic.adapter.outbound.agent.graph.schema.planner_decision import PlannerDecision
 from agentic.adapter.outbound.agent.graph.schema.tool_call import ToolCall
 from agentic.adapter.outbound.agent.service.prompt_service import PromptService
-from agentic.adapter.outbound.agent.tool.tool_registery import ToolRegistry
+from agentic.adapter.outbound.agent_tool.tool_registery import ToolRegistry
 
 
 class PlannerNode(Node):

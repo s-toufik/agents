@@ -6,8 +6,8 @@ from agentic.adapter.outbound.agent.graph.schema.agent_state import AgentState
 from agentic.adapter.outbound.agent.graph.schema.conversation_message import ConversationMessage
 from agentic.adapter.outbound.agent.graph.schema.graph_state import GraphState
 from agentic.adapter.outbound.agent.graph.schema.tool_call import ToolCall
-from agentic.adapter.outbound.agent.tool.schema.tool_result import ToolResult
-from agentic.adapter.outbound.agent.tool.tool_registery import ToolRegistry
+from agentic.adapter.outbound.agent_tool.schema.tool_result import ToolResult
+from agentic.adapter.outbound.agent_tool.tool_registery import ToolRegistry
 
 
 class ExecutorNode(Node):
