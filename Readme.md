@@ -49,11 +49,14 @@ This starts automatically with the app — no extra config needed. The agent's o
    # agent_container.py
    from mcp.server.transport_security import TransportSecuritySettings
 
+
    @cached_property
    def mcp_asgi_app(self) -> Starlette:
        return self._mcp_server.streamable_http_app(
            streamable_http_path="/",
-           transport_security=TransportSecuritySettings(allowed_hosts=["<machine-name>.<tailnet-name>.ts.net"]),
+           transport_security=TransportSecuritySettings(
+               allowed_hosts=["<machine-name>.<tailnet-name>.ts.net"]
+           ),
        )
    ```
 

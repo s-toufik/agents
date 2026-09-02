@@ -8,7 +8,6 @@ from mcp.shared.memory import create_client_server_memory_streams
 
 
 class McpInProcessClientFactory:
-
     def __init__(self, server: MCPServer) -> None:
         self._server = server
         self._stack: AsyncExitStack | None = None

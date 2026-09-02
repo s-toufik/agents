@@ -21,7 +21,11 @@ def test_required_and_optional_fields_are_reflected_in_the_schema():
 
 
 def test_missing_required_field_raises_validation_error():
-    input_schema = {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
+    input_schema = {
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"],
+    }
     model = build_tool_input("search-docs", input_schema)
 
     try:

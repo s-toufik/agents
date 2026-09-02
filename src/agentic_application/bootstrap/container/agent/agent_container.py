@@ -35,7 +35,9 @@ class AgentContainer(AgentDI):
         dotenv.load_dotenv()
         return self._mcp_server.streamable_http_app(
             streamable_http_path="/",
-            transport_security=TransportSecuritySettings(allowed_hosts=[os.getenv("APP_CONNECTOR_TOOLS_MCP", "")]),
+            transport_security=TransportSecuritySettings(
+                allowed_hosts=[os.getenv("APP_CONNECTOR_TOOLS_MCP", "")]
+            ),
         )
 
     @asynccontextmanager

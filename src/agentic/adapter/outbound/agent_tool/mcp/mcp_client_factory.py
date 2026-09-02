@@ -49,7 +49,9 @@ class McpClientFactory:
 
         if self._connector.transport == "sse":
             return await stack.enter_async_context(
-                sse_client(self._connector.base_url, headers=headers, timeout=self._connector.timeout)
+                sse_client(
+                    self._connector.base_url, headers=headers, timeout=self._connector.timeout
+                )
             )
 
         http_client = create_mcp_http_client(

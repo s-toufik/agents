@@ -55,7 +55,9 @@ async def test_start_over_streamable_http_wires_the_client_into_the_transport():
     with (
         patch(f"{_MODULE}.create_mcp_http_client", return_value=fake_http_client),
         patch(f"{_MODULE}.streamable_http_client", return_value=fake_transport) as mock_transport,
-        patch(f"{_MODULE}.ClientSession", return_value=FakeAsyncContextManager(session)) as mock_session_cls,
+        patch(
+            f"{_MODULE}.ClientSession", return_value=FakeAsyncContextManager(session)
+        ) as mock_session_cls,
     ):
         factory = McpClientFactory(connector)
         await factory.start()
@@ -69,7 +71,9 @@ async def test_start_over_streamable_http_wires_the_client_into_the_transport():
 
 @pytest.mark.asyncio
 async def test_start_over_sse_passes_headers_and_timeout_directly():
-    connector = make_connector(transport="sse", auth=TokenAuth(key_name="X-Api-Key", key_value="secret"))
+    connector = make_connector(
+        transport="sse", auth=TokenAuth(key_name="X-Api-Key", key_value="secret")
+    )
     fake_transport = FakeAsyncContextManager(enter_value=("read", "write"))
     session = make_session()
 
@@ -80,9 +84,7 @@ async def test_start_over_sse_passes_headers_and_timeout_directly():
         factory = McpClientFactory(connector)
         await factory.start()
 
-    mock_sse.assert_called_once_with(
-        connector.base_url, headers={"X-Api-Key": "secret"}, timeout=5
-    )
+    mock_sse.assert_called_once_with(connector.base_url, headers={"X-Api-Key": "secret"}, timeout=5)
     assert factory.create_client() is session
 
 

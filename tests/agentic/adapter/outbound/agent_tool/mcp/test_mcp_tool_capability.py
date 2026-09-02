@@ -36,7 +36,9 @@ def test_schema_reflects_name_description_and_parameters():
 async def test_execute_returns_the_text_content_on_success():
     session = MagicMock()
     session.call_tool = AsyncMock(
-        return_value=MagicMock(content=[TextContent(type="text", text="42 results")], is_error=False)
+        return_value=MagicMock(
+            content=[TextContent(type="text", text="42 results")], is_error=False
+        )
     )
     capability = make_capability(session)
     request = make_request(capability)
@@ -52,7 +54,9 @@ async def test_execute_returns_the_text_content_on_success():
 async def test_execute_maps_mcp_tool_side_error_to_tool_result_error():
     session = MagicMock()
     session.call_tool = AsyncMock(
-        return_value=MagicMock(content=[TextContent(type="text", text="invalid query")], is_error=True)
+        return_value=MagicMock(
+            content=[TextContent(type="text", text="invalid query")], is_error=True
+        )
     )
     capability = make_capability(session)
     request = make_request(capability)

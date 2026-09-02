@@ -15,6 +15,7 @@ def register_tools(
 ) -> None:
 
     sql_schema = sql_tool.schema()
+
     @server.tool(name=sql_tool.name, description=sql_schema["description"])
     async def _query_users(query: str, dialect: str) -> str:
         request = SQLToolInput(query=query, dialect=dialect)
@@ -23,6 +24,7 @@ def register_tools(
         return result.content
 
     python_schema = python_tool.schema()
+
     @server.tool(name=python_tool.name, description=python_schema["description"])
     async def _run_python(code: str) -> str:
         request = PythonToolInput(code=code)

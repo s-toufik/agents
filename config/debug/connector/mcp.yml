@@ -5,6 +5,5 @@ connector:
     base_url: http://localhost:8000/mcp
     timeout: 5
     transport: streamable_http
-    certificate: ""
     auth:
       type: none
