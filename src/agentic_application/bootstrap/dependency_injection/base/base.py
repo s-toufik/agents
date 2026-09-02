@@ -56,10 +56,6 @@ class BaseDI:
 
     @cached_property
     def _telemetry_provider(self) -> TelemetryProvider:
-        # Constructed once and shared: opentelemetry.trace.set_tracer_provider() is a
-        # global singleton that only accepts its first call, so every component that
-        # needs a tracer must derive it from this one provider via .tracer(<name>)
-        # rather than constructing its own OpenTelemetryProvider.
         return OpenTelemetryProvider(
             service_name="risk-analytics",
             environment=self._configuration.env,
