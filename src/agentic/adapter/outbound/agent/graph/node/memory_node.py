@@ -8,8 +8,8 @@ from agentic.adapter.outbound.agent.service.tokens_service import count_message_
 
 
 class MemoryNode(Node):
-    def __init__(self, max_tokens: int = 8_000) -> None:
-        self._max_tokens = max_tokens
+    def __init__(self, max_context_tokens: int = 8_000) -> None:
+        self._max_context_tokens = max_context_tokens
 
     async def __call__(self, state: GraphState) -> GraphState:
 
@@ -19,7 +19,7 @@ class MemoryNode(Node):
         trimmed: list[BaseMessage] = trim_messages(
             lc_messages,
             token_counter=count_message_tokens,
-            max_tokens=self._max_tokens,
+            max_tokens=self._max_context_tokens,
             strategy="last",
             include_system=False,
         )

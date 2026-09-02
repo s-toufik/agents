@@ -74,14 +74,20 @@ class AgentDI(McpDI):
         factory: AsyncRepositoryFactory = SQLiteRepositoryFactory(settings)
         return await factory.connection()
 
-    def _llm_for_model(self, model_name: str, streaming: bool) -> ChatOpenAI:
+    def _model_parameters(self, model_name: str) -> tuple[ModelConnector, ModelParameters]:
         operation: ApiOperation = self._configuration.operation.api(model_name)
         connector: ModelConnector
         parameters: ModelParameters
         connector, parameters = ModelSettingsMapper(operation)()
-        return LLMChat(connector, parameters, self._llm_http_client).create_chat_client(
-            streaming=streaming
-        )
+        return connector, parameters
+
+    def _llm_for_model(self, model_name: str, use_streaming: bool | None = None) -> ChatOpenAI:
+        connector: ModelConnector
+        parameters: ModelParameters
+        connector, parameters = self._model_parameters(model_name)
+        if use_streaming is not None:
+            parameters.use_streaming = use_streaming
+        return LLMChat(connector, parameters, self._llm_http_client).create_chat_client()
 
     async def _build_graph(
         self,
@@ -89,15 +95,18 @@ class AgentDI(McpDI):
         checkpointer: Any,
         tool_registry: ToolRegistry,
     ) -> tuple[Any, Any]:
-        planner_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=True)
-        reflection_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, streaming=False)
+        parameters: ModelParameters
+        _, parameters = self._model_parameters(model_name)
+
+        planner_llm: ChatOpenAI = self._llm_for_model(model_name=model_name)
+        reflection_llm: ChatOpenAI = self._llm_for_model(model_name=model_name, use_streaming=False)
 
         graph, _ = build_agent(
             planner_llm,
             reflection_llm,
             tool_registry=tool_registry,
             checkpointer=checkpointer,
-            use_streaming=True,
+            model_parameters=parameters,
             on_token=on_token,
         )
 

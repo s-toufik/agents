@@ -44,14 +44,14 @@ def test_defaults_max_tokens_and_temperature_when_absent():
     _, parameters = mapper()
 
     assert parameters.model_name == "gpt-model"
-    assert parameters.max_tokens == 8000
+    assert parameters.max_output_tokens == 8000
     assert parameters.temperature == 0.0
 
 
 def test_uses_explicit_max_tokens_and_temperature_when_present():
-    mapper = ModelSettingsMapper(make_operation({"max_tokens": 500, "temperature": 0.7}))
+    mapper = ModelSettingsMapper(make_operation({"max_output_tokens": 500, "temperature": 0.7}))
 
     _, parameters = mapper()
 
-    assert parameters.max_tokens == 500
+    assert parameters.max_output_tokens == 500
     assert parameters.temperature == 0.7

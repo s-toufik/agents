@@ -19,7 +19,7 @@ def make_conversation(n):
 @pytest.mark.asyncio
 async def test_trims_conversation_to_fit_under_max_tokens():
     state = AgentState(conversation=make_conversation(10))
-    node = MemoryNode(max_tokens=15)
+    node = MemoryNode(max_context_tokens=15)
 
     result = unpack_state(await node(pack_state(state)))
 
@@ -31,7 +31,7 @@ async def test_trims_conversation_to_fit_under_max_tokens():
 @pytest.mark.asyncio
 async def test_keeps_all_messages_when_well_under_max_tokens():
     state = AgentState(conversation=make_conversation(2))
-    node = MemoryNode(max_tokens=8_000)
+    node = MemoryNode(max_context_tokens=8_000)
 
     result = unpack_state(await node(pack_state(state)))
 

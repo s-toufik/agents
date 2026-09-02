@@ -24,7 +24,14 @@ class ModelSettingsMapper:
             ),
             ModelParameters(
                 model_name=self._operation.name,
-                max_tokens=cast(int, self._operation.parameters.get("max_tokens", 8000)),
+                max_output_tokens=cast(
+                    int, self._operation.parameters.get("max_output_tokens", 8000)
+                ),
+                max_context_tokens=cast(
+                    int, self._operation.parameters.get("max_context_tokens", 8000)
+                ),
                 temperature=cast(float, self._operation.parameters.get("temperature", 0.0)),
+                max_iterations=cast(int, self._operation.parameters.get("max_iterations", 10)),
+                use_streaming=cast(bool, self._operation.parameters.get("use_streaming", False)),
             ),
         )

@@ -13,12 +13,7 @@ class AgentMessageSchema(BaseModel):
     message_type: AgentMessageType = AgentMessageType.TEXT
 
     def serialize(self) -> bytes:
-        return (
-            f"event_type: {self.message_status.value}\n"
-            f"session_id: {self.session_id}\n"
-            f"content: {self.content}\n"
-            f"metadata: {self.metadata}\n"
-            f"error: {self.error}\n"
-            f"message_status: {self.message_status.value}\n"
-            f"message_type: {self.message_type.value}\n"
-        ).encode()
+        # SSE framing: one `event:` line (the type), one `data:` line carrying the
+        # whole payload as JSON -- JSON escapes embedded newlines, so multi-line
+        # blank line that terminates the event per the SSE spec.
+        return f"event: {self.message_status.value}\ndata: {self.model_dump_json()}\n\n".encode()

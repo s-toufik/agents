@@ -8,5 +8,8 @@ class ModelConnector(BaseModel):
 
 class ModelParameters(BaseModel):
     model_name: str
-    max_tokens: int
     temperature: float
+    max_output_tokens: int
+    max_context_tokens: int
+    max_iterations: int
+    use_streaming: bool
