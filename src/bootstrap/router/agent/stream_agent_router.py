@@ -12,13 +12,13 @@ class StreamAgentRouter:
     def __init__(self, controller: StreamAgentController) -> None:
         self._controller = controller
         self._router: APIRouter = APIRouter(prefix=self.PREFIX)
-        self._register()
+        self._router_register()
 
     @property
     def router(self) -> APIRouter:
         return self._router
 
-    def _register(self) -> None:
+    def _router_register(self) -> None:
         self._router.add_api_route(self.ENDPOINT, self._stream, methods=["POST"])
 
     async def _stream(self, request: AgentRequestSchema = Body(...)) -> StreamingResponse:

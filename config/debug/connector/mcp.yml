@@ -6,9 +6,7 @@ connector:
     timeout: 30
     transport: streamable_http
     auth:
-      type: token
-      key_name: ${oc.env:TOOLBOX_AUTH_HEADER,Authorization}
-      key_value: ${oc.env:TOOLBOX_TOKEN,''}
+      type: none
 
   self:
     name: toolbox
