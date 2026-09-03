@@ -1,13 +1,46 @@
 import asyncio
+from typing import Any
 
 import pytest
 
 from toolbox.adapter.outbound.code.python_tool import PythonTool
+from toolbox.adapter.outbound.file.reader_tool import FileReaderTool
+from toolbox.adapter.outbound.file.writer_tool import FileWriterTool
 from toolbox.adapter.outbound.sql.sql_tool import SqlTool
 from toolbox.domain.model.tool_invocation import ToolInvocation
 from toolbox.domain.model.tool_specification import ToolSpecification
 
 SPEC = ToolSpecification(name="tool", description="A tool.")
+
+
+class StubFileHandlerFactory:
+    def __init__(
+        self,
+        read_result: Any = None,
+        read_error: Exception | None = None,
+        write_error: Exception | None = None,
+    ) -> None:
+        self._read_result = read_result
+        self._read_error = read_error
+        self._write_error = write_error
+        self.written: Any = None
+
+    def read(self) -> Any:
+        if self._read_error:
+            raise self._read_error
+        return self._read_result
+
+    def write(self, data: Any) -> None:
+        if self._write_error:
+            raise self._write_error
+        self.written = data
+
+
+def file_handler_provider(factory: StubFileHandlerFactory):
+    def provider(file_path: str) -> StubFileHandlerFactory:
+        return factory
+
+    return provider
 
 
 class StubCode:
@@ -147,5 +180,152 @@ def test_sql_tool_exposes_its_specification() -> None:
 
 def test_python_tool_exposes_its_specification(semaphore) -> None:
     tool = PythonTool(code_factory(), SPEC, semaphore)
+
+    assert tool.specification is SPEC
+
+
+async def test_file_reader_tool_returns_the_read_result() -> None:
+    factory = StubFileHandlerFactory(read_result={"a": 1})
+    tool = FileReaderTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"file_path": "/tmp/x.json"})
+    )
+
+    assert not outcome.failed
+    assert outcome.output == "{'a': 1}"
+
+
+async def test_file_reader_tool_rejects_empty_file_path() -> None:
+    tool = FileReaderTool(file_handler_provider(StubFileHandlerFactory()), SPEC)
+
+    outcome = await tool.invoke(ToolInvocation(id="1", name="tool", arguments={"file_path": "   "}))
+
+    assert outcome.failed
+    assert "No file_path" in (outcome.error or "")
+
+
+async def test_file_reader_tool_reports_file_not_found() -> None:
+    factory = StubFileHandlerFactory(read_error=FileNotFoundError())
+    tool = FileReaderTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"file_path": "/tmp/missing.json"})
+    )
+
+    assert outcome.failed
+    assert "File not found" in (outcome.error or "")
+
+
+async def test_file_reader_tool_surfaces_unexpected_errors() -> None:
+    factory = StubFileHandlerFactory(read_error=NotImplementedError("bad extension"))
+    tool = FileReaderTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"file_path": "/tmp/x.xyz"})
+    )
+
+    assert outcome.failed
+    assert "bad extension" in (outcome.error or "")
+
+
+def test_file_reader_tool_exposes_its_specification() -> None:
+    tool = FileReaderTool(file_handler_provider(StubFileHandlerFactory()), SPEC)
+
+    assert tool.specification is SPEC
+
+
+async def test_file_writer_tool_parses_json_object_data_and_writes_it() -> None:
+    factory = StubFileHandlerFactory()
+    tool = FileWriterTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(
+            id="1", name="tool", arguments={"file_path": "/tmp/x.json", "data": '{"a": 1}'}
+        )
+    )
+
+    assert not outcome.failed
+    assert factory.written == {"a": 1}
+
+
+async def test_file_writer_tool_parses_json_array_data() -> None:
+    factory = StubFileHandlerFactory()
+    tool = FileWriterTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(
+            id="1", name="tool", arguments={"file_path": "/tmp/x.csv", "data": '[{"a": 1}]'}
+        )
+    )
+
+    assert not outcome.failed
+    assert factory.written == [{"a": 1}]
+
+
+async def test_file_writer_tool_rejects_invalid_json_data() -> None:
+    factory = StubFileHandlerFactory()
+    tool = FileWriterTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(
+            id="1", name="tool", arguments={"file_path": "/tmp/x.json", "data": "{not json"}
+        )
+    )
+
+    assert outcome.failed
+    assert "Invalid JSON" in (outcome.error or "")
+    assert factory.written is None
+
+
+async def test_file_writer_tool_rejects_empty_file_path() -> None:
+    tool = FileWriterTool(file_handler_provider(StubFileHandlerFactory()), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"file_path": "  ", "data": "{}"})
+    )
+
+    assert outcome.failed
+    assert "No file_path" in (outcome.error or "")
+
+
+async def test_file_writer_tool_defaults_to_an_empty_object_when_no_data_given() -> None:
+    factory = StubFileHandlerFactory()
+    tool = FileWriterTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"file_path": "/tmp/x.json"})
+    )
+
+    assert not outcome.failed
+    assert factory.written == {}
+
+
+async def test_file_writer_tool_reports_file_path_not_found() -> None:
+    factory = StubFileHandlerFactory(write_error=FileNotFoundError())
+    tool = FileWriterTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"file_path": "/nope/x.json", "data": "{}"})
+    )
+
+    assert outcome.failed
+    assert "File path not found" in (outcome.error or "")
+
+
+async def test_file_writer_tool_surfaces_unexpected_errors() -> None:
+    factory = StubFileHandlerFactory(write_error=NotImplementedError("bad extension"))
+    tool = FileWriterTool(file_handler_provider(factory), SPEC)
+
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"file_path": "/tmp/x.xyz", "data": "{}"})
+    )
+
+    assert outcome.failed
+    assert "bad extension" in (outcome.error or "")
+
+
+def test_file_writer_tool_exposes_its_specification() -> None:
+    tool = FileWriterTool(file_handler_provider(StubFileHandlerFactory()), SPEC)
 
     assert tool.specification is SPEC

@@ -65,7 +65,12 @@ async def test_entering_the_asgi_app_boots_real_tools_and_health_reports_ok() ->
         response = client.get("/health")
 
     assert response.status_code == 200
-    assert set(response.json()["tools"]) == {"users_tables", "python_executor"}
+    assert set(response.json()["tools"]) == {
+        "users_tables",
+        "python_executor",
+        "file_reader",
+        "file_writer",
+    }
 
 
 async def test_stop_after_boot_does_not_raise() -> None:

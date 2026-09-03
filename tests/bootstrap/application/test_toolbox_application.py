@@ -36,7 +36,12 @@ def test_the_returned_app_is_the_containers_own_mcp_asgi_app_and_boots_real_tool
         response = client.get("/health")
 
     assert response.status_code == 200
-    assert set(response.json()["tools"]) == {"users_tables", "python_executor"}
+    assert set(response.json()["tools"]) == {
+        "users_tables",
+        "python_executor",
+        "file_reader",
+        "file_writer",
+    }
 
 
 def test_main_runs_uvicorn_with_the_configured_host_and_port(monkeypatch) -> None:

@@ -1,6 +1,7 @@
 import asyncio
 
 from pycraftcore.application_configuration.model.connector import DatabaseConnector
+from pycraftcore.file_handler.adapter import Handler
 from pycraftcore.query_language.adapter import SqlHandlerFactory
 from pycraftcore.repository.adapter import SQLiteRepositoryFactory, SqliteSettingsMapper
 from pycraftcore.repository.port import AsyncRepository, AsyncRepositoryFactory
@@ -9,8 +10,15 @@ from pycraftcore.runtime.configuration import SafeCodeSettings
 
 from bootstrap.di.base_di import BaseDI
 from toolbox.adapter.outbound.code.python_tool import PythonTool
+from toolbox.adapter.outbound.file.reader_tool import FileReaderTool
+from toolbox.adapter.outbound.file.writer_tool import FileWriterTool
 from toolbox.adapter.outbound.registry.in_memory_tool_registry import InMemoryToolRegistry
-from toolbox.adapter.outbound.specification import python_sandbox, user_database
+from toolbox.adapter.outbound.specification import (
+    file_reader,
+    file_writer,
+    python_sandbox,
+    user_database,
+)
 from toolbox.adapter.outbound.sql.sql_tool import SqlTool
 from toolbox.application.port.outbound.tool_port import ToolPort, ToolRegistryPort
 from toolbox.application.use_case.execute_tool_usecase import ExecuteToolUseCase
@@ -18,7 +26,12 @@ from toolbox.application.use_case.execute_tool_usecase import ExecuteToolUseCase
 
 class ToolboxDI(BaseDI):
     async def _tools(self) -> list[ToolPort]:
-        return [await self._sql_tool(), self._python_tool()]
+        return [
+            await self._sql_tool(),
+            self._python_tool(),
+            self._file_reader_tool(),
+            self._file_writer_tool(),
+        ]
 
     async def _tool_registry(self) -> ToolRegistryPort:
         return InMemoryToolRegistry(await self._tools())
@@ -35,7 +48,8 @@ class ToolboxDI(BaseDI):
             default_dialect=user_database.DIALECT,
         )
 
-    def _python_tool(self) -> PythonTool:
+    @staticmethod
+    def _python_tool() -> PythonTool:
         settings = SafeCodeSettings(
             code_timeout=python_sandbox.TIMEOUT_SECONDS,
             max_memory_mb=python_sandbox.MAX_MEMORY_MB,
@@ -44,6 +58,20 @@ class ToolboxDI(BaseDI):
             code_factory=PythonSafeCodeFactory(settings=settings),
             specification=python_sandbox.SPECIFICATION,
             semaphore=asyncio.Semaphore(python_sandbox.MAX_CONCURRENCY),
+        )
+
+    @staticmethod
+    def _file_reader_tool() -> FileReaderTool:
+        return FileReaderTool(
+            file_handler_provider=Handler,
+            specification=file_reader.SPECIFICATION,
+        )
+
+    @staticmethod
+    def _file_writer_tool() -> FileWriterTool:
+        return FileWriterTool(
+            file_handler_provider=Handler,
+            specification=file_writer.SPECIFICATION,
         )
 
     async def _sqlite_repository(self, connector_name: str) -> AsyncRepository:

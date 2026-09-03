@@ -141,3 +141,10 @@ To run them manually against the whole repo:
 ```bash
 uv run pre-commit run --all-files --hook-stage pre-commit
 ```
+
+### MCP inspection 
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+

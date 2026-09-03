@@ -52,9 +52,32 @@ async def test_tools_returns_both_the_sql_and_python_tools(tmp_path, monkeypatch
 
     tools = await di._tools()
 
-    assert {tool.specification.name for tool in tools} == {"users_tables", "python_executor"}
+    assert {tool.specification.name for tool in tools} == {
+        "users_tables",
+        "python_executor",
+        "file_reader",
+        "file_writer",
+    }
 
     await di._stop_factories()
+
+
+def test_file_reader_tool_is_wired_to_the_file_reader_specification(tmp_path, monkeypatch) -> None:
+    _set_required_env(monkeypatch, tmp_path)
+    di = make_di(tmp_path)
+
+    tool = di._file_reader_tool()
+
+    assert tool.specification.name == "file_reader"
+
+
+def test_file_writer_tool_is_wired_to_the_file_writer_specification(tmp_path, monkeypatch) -> None:
+    _set_required_env(monkeypatch, tmp_path)
+    di = make_di(tmp_path)
+
+    tool = di._file_writer_tool()
+
+    assert tool.specification.name == "file_writer"
 
 
 async def test_tool_registry_exposes_both_tools_by_name(tmp_path, monkeypatch) -> None:
@@ -63,7 +86,12 @@ async def test_tool_registry_exposes_both_tools_by_name(tmp_path, monkeypatch) -
 
     registry = await di._tool_registry()
 
-    assert set(registry.names()) == {"users_tables", "python_executor"}
+    assert set(registry.names()) == {
+        "users_tables",
+        "python_executor",
+        "file_reader",
+        "file_writer",
+    }
 
     await di._stop_factories()
 
