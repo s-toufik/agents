@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter
 from starlette import status
 from starlette.requests import Request
@@ -13,11 +12,11 @@ class ActuatorRouter:
 
     def __init__(
         self,
-            app_name: str,
-            app_version: str,
-            app_deployment_environment: str,
-            app_api_root_path: str,
-            app_authors: str
+        app_name: str,
+        app_version: str,
+        app_deployment_environment: str,
+        app_api_root_path: str,
+        app_authors: str,
     ) -> None:
         self._app_name = app_name
         self._app_version = app_version

@@ -131,7 +131,9 @@ async def test_sql_tool_surfaces_a_repository_execution_error() -> None:
     repository = StubRepository(error=RuntimeError("db is gone"))
     tool = SqlTool(repository, query_factory(), SPEC, "sqlite")
 
-    outcome = await tool.invoke(ToolInvocation(id="1", name="tool", arguments={"query": "select 1"}))
+    outcome = await tool.invoke(
+        ToolInvocation(id="1", name="tool", arguments={"query": "select 1"})
+    )
 
     assert outcome.failed
     assert "db is gone" in (outcome.error or "")

@@ -73,7 +73,7 @@ class AgentContainer(AgentDI):
             app_version=APPLICATION_VERSION,
             app_deployment_environment=APPLICATION_DEPLOYMENT_ENVIRONMENT,
             app_authors=APPLICATION_AUTHORS_EMAIL,
-            app_api_root_path=APPLICATION_API_ROOT_PATH
+            app_api_root_path=APPLICATION_API_ROOT_PATH,
         ).router
 
     @property
