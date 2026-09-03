@@ -90,3 +90,37 @@ async def test_provider_rejects_an_empty_catalogue() -> None:
 
     with pytest.raises(ToolUnavailableException):
         await provider.tools()
+
+
+class FakeAdvertisedTool:
+    def __init__(self, name: str, description: str, input_schema: dict) -> None:
+        self.name = name
+        self.description = description
+        self.input_schema = input_schema
+
+
+async def test_provider_returns_a_tool_per_advertised_entry() -> None:
+    advertised = [FakeAdvertisedTool("run_sql", "Run SQL.", {"type": "object"})]
+    provider = McpToolProvider(StubFactory(StubSession(tools=advertised)))
+
+    tools = await provider.tools()
+
+    assert len(tools) == 1
+    assert tools[0].specification.name == "run_sql"
+    assert tools[0].specification.description == "Run SQL."
+    assert tools[0].specification.parameters == {"type": "object"}
+
+
+def test_specification_property_exposes_the_tool_specification() -> None:
+    tool = McpTool(StubFactory(StubSession()), SPEC)
+
+    assert tool.specification is SPEC
+
+
+async def test_a_non_call_tool_result_becomes_a_failed_outcome() -> None:
+    tool = McpTool(StubFactory(StubSession(result="not a CallToolResult")), SPEC)
+
+    outcome = await tool.invoke(ToolInvocation(id="1", name="run_sql"))
+
+    assert outcome.error is not None
+    assert "Unsupported MCP result type" in outcome.error

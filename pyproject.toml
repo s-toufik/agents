@@ -40,7 +40,10 @@ dependencies = [
     "numpy",
     "pandas",
     "matplotlib",
+    "ipykernel>=7.3.0",
 ]
+[tool.uv.sources]
+pycraftcore = { path = "../pycraftcore", editable = true }
 
 [project.scripts]
 agent = "bootstrap.application.agent_application:main"
@@ -51,6 +54,7 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "pytest-cov>=7.1.0",
+    "pytest-xdist>=3.6.0",
     "hypothesis>=6.151.9",
     "Faker",
     "ruff",

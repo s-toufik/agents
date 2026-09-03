@@ -16,7 +16,7 @@ endif
 	uv sync
 
 test:
-	uv run pytest
+	uv run pytest -n auto --disable-warnings
 
 lint:
 	uv run ruff check .

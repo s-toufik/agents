@@ -114,3 +114,36 @@ async def test_sql_tool_never_reaches_the_database_on_invalid_sql() -> None:
     assert repository.executed == []
     assert outcome.failed
     assert "validation" in (outcome.error or "")
+
+
+async def test_sql_tool_rejects_an_empty_query_without_touching_anything() -> None:
+    repository = StubRepository()
+    tool = SqlTool(repository, query_factory(), SPEC, "sqlite")
+
+    outcome = await tool.invoke(ToolInvocation(id="1", name="tool", arguments={"query": "   "}))
+
+    assert repository.executed == []
+    assert outcome.failed
+    assert "No SQL query" in (outcome.error or "")
+
+
+async def test_sql_tool_surfaces_a_repository_execution_error() -> None:
+    repository = StubRepository(error=RuntimeError("db is gone"))
+    tool = SqlTool(repository, query_factory(), SPEC, "sqlite")
+
+    outcome = await tool.invoke(ToolInvocation(id="1", name="tool", arguments={"query": "select 1"}))
+
+    assert outcome.failed
+    assert "db is gone" in (outcome.error or "")
+
+
+def test_sql_tool_exposes_its_specification() -> None:
+    tool = SqlTool(StubRepository(), query_factory(), SPEC, "sqlite")
+
+    assert tool.specification is SPEC
+
+
+def test_python_tool_exposes_its_specification(semaphore) -> None:
+    tool = PythonTool(code_factory(), SPEC, semaphore)
+
+    assert tool.specification is SPEC
