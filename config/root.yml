@@ -1,20 +1,18 @@
 application_configuration:
-  env: ${oc.env:APP_ENV,dev}
+  env: ${oc.env:APP_ENV,debug}
   run: async
 
   connector:
     api:
       llm: ${connector.llm}
-    file:
-      local_fs: ${connector.local_fs}
     database:
-      postgres: ${connector.postgres}
-      users: ${connector.users}
       checkpointer: ${connector.checkpointer}
+      users: ${connector.users}
     telemetry:
       open_telemetry: ${connector.telemetry}
     mcp:
-      tools: ${connector.tools}
+      toolbox: ${connector.toolbox}
+      self: ${connector.self}
 
   operation:
     gpt_oss_20b: ${operation.gpt_oss_20b}

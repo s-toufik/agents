@@ -1,9 +1,20 @@
 connector:
-  tools:
-    name: mcp_tools
+  toolbox:
+    name: toolbox
     type: mcp
-    base_url: http://localhost:8000/mcp
-    timeout: 5
+    base_url: ${oc.env:TOOLBOX_URL,http://localhost:8001/mcp}
+    timeout: 30
+    transport: streamable_http
+    auth:
+      type: token
+      key_name: ${oc.env:TOOLBOX_AUTH_HEADER,Authorization}
+      key_value: ${oc.env:TOOLBOX_TOKEN,''}
+
+  self:
+    name: toolbox
+    type: mcp
+    base_url: ${connector.toolbox.base_url}
+    timeout: 30
     transport: streamable_http
     auth:
       type: none

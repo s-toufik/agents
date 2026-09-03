@@ -1,14 +1,11 @@
 venv:
 	uv venv
 
-clean_dependency_cache:
-	uv cache clear
-
-clear_dependency_cache:
-	uv cache clear
-
 install:
 	uv sync
+
+install_dev:
+	uv sync --group dev
 
 update_dependency:
 ifdef PACKAGE
@@ -17,9 +14,6 @@ else
 	uv lock --upgrade
 endif
 	uv sync
-
-install_dev:
-	uv sync --group dev
 
 test:
 	uv run pytest
@@ -30,37 +24,31 @@ lint:
 fix:
 	uv run ruff check --fix .
 
-typecheck:
-	uv run ty check
-
 format:
 	uv run ruff format .
+
+typecheck:
+	uv run ty check
 
 check:
 	$(MAKE) lint
 	$(MAKE) typecheck
 	$(MAKE) test
 
-git_init:
-	git init
-	git add --all
-	git commit -m "init project"
-	git checkout -b develop
+# --- run -------------------------------------------------------------------
+run_toolbox:
+	uv run uvicorn bootstrap.application.toolbox_application:app --host 0.0.0.0 --port 8001
+
+run_agent:
+	uv run uvicorn bootstrap.application.agent_application:app --host 0.0.0.0 --port 8000
+
+# Toolbox first: the agent discovers its tools at boot.
+run:
+	$(MAKE) -j2 run_toolbox run_agent
 
 clean:
-	rm -rf dist
-	rm -rf src/*.egg-info
+	rm -rf dist src/*.egg-info
 
 build:
-	rm -rf dist
-	rm -rf src/*.egg-info
+	rm -rf dist src/*.egg-info
 	uv build
-
-publish_dev:
-	export UV_PUBLISH_TOKEN=$$TEST_PYPI_TOKEN && \
-	uv publish --publish-url https://test.pypi.org/legacy/
-
-publish:
-	@echo "INFO: Make sure that UV_PUBLISH_TOKEN env variable is set"
-	export UV_PUBLISH_TOKEN=$$RELEASE_PYPI_TOKEN && \
-	uv publish

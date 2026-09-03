@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent"
-version = "0.1.0"
+version = "1.0.0"
 authors = [
     { name = "Toufik Saouchi", email = "toufik.saouchi@gmail.com" },
 ]
-description = "description"
+description = "Analytics agent and its MCP toolbox, deployed as two independent processes"
 readme = "Readme.md"
 requires-python = ">=3.14"
 classifiers = [
@@ -17,72 +17,69 @@ classifiers = [
 ]
 license = "MIT"
 dependencies = [
-    "ipykernel>=7.3.0",
-    "numpy",
-    "matplotlib",
-    "python-dotenv",
-    "aiobreaker",
     "fastapi",
     "uvicorn[standard]",
     "uvloop",
-    "loguru",
-    "omegaconf",
-    "pydantic>=2",
-    "sqlglot",
-    "langgraph-checkpoint-sqlite",
-    "ruff",
-    "scipy-stubs>=1.17.1.3",
-    "Pyright",
-    "mypy",
-    "python-dotenv",
-    "langchain",
-    "langgraph",
-    "langchain-core",
-    "langchain-openai",
+    "starlette",
     "httpx",
     "httpx2",
     "mcp",
-    "pycraftcore"
+    "pycraftcore",
+    "pydantic>=2",
+    "omegaconf",
+    "python-dotenv",
+    "loguru",
+    "langchain",
+    "langchain-core",
+    "langchain-openai",
+    "langgraph",
+    "langgraph-checkpoint-sqlite",
+    "aiosqlite",
+    "sqlglot",
+    "aiobreaker",
+    "numpy",
+    "pandas",
+    "matplotlib",
 ]
+
+[project.scripts]
+agent = "bootstrap.application.agent_application:main"
+toolbox = "bootstrap.application.toolbox_application:main"
 
 [dependency-groups]
 dev = [
     "pytest",
-    "hypothesis>=6.151.9",
     "pytest-asyncio",
-    "Faker",
     "pytest-cov>=7.1.0",
+    "hypothesis>=6.151.9",
+    "Faker",
     "ruff",
-    "scipy-stubs>=1.17.1.3",
     "ty",
-    "pre-commit"
+    "pre-commit",
 ]
 
-[tool.uv.sources]
-pycraftcore = { path = "../pycraftcore", editable = true }
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py314"
 
 [tool.ruff.lint]
-select = [
-    "E",    # pycodestyle
-    "F",    # pyflakes
-    "UP",   # pyupgrade
-]
+select = ["E", "F", "UP", "I"]
 ignore = [
-    "B017", # Blind exeception in tests
-    "BLE001", # Blind exception in code
-    "E501", # Line length
+    "E501",   # line length, handled by the formatter
+    "BLE001", # blind exception, deliberate at adapter boundaries
 ]
 
 [tool.ty.src]
-include = ["src"]
-exclude = ["tests", ".venv"]
-
-[tool.setuptools.packages.find]
-where = ["src"]
+include = ["src", "tests"]
+exclude = [".venv"]
 
 [project.urls]
 Homepage = "https://github.com/s-toufik/agents"

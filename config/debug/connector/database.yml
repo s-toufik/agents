@@ -1,31 +1,4 @@
 connector:
-  postgres:
-    name: postgres
-    type: database
-    engine: postgres_sql
-    host: ${oc.env:POSTGRE_DB_HOST}
-    port: 5432
-    default_name: ${oc.env:POSTGRE_DB_NAME}
-    pool:
-      min: 2
-      max: 10
-    auth:
-      type: basic
-      username: ${oc.env:POSTGRE_DB_USER}
-      password: ${oc.env:POSTGRE_DB_PASSWORD}
-
-  users:
-    name: users_dash_bord
-    type: database
-    engine: sqlite
-    host: ${oc.env:USER_DB_HOST}
-    port: 0
-    default_name: ${oc.env:USER_DB_NAME}
-    pool:
-      max: 4
-    auth:
-      type: none
-
   checkpointer:
     name: conversation_checkpointer
     type: database
@@ -34,5 +7,17 @@ connector:
     port: 0
     default_name: ${oc.env:CHECKPOINT_DB_NAME}
     pool: {}
+    auth:
+      type: none
+
+  users:
+    name: users_dashboard
+    type: database
+    engine: sqlite
+    host: ${oc.env:USER_DB_HOST}
+    port: 0
+    default_name: ${oc.env:USER_DB_NAME}
+    pool:
+      max: 4
     auth:
       type: none

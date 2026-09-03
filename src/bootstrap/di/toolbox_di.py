@@ -1,0 +1,53 @@
+import asyncio
+
+from pycraftcore.application_configuration.model.connector import DatabaseConnector
+from pycraftcore.query_language.adapter import SqlHandlerFactory
+from pycraftcore.repository.adapter import SQLiteRepositoryFactory, SqliteSettingsMapper
+from pycraftcore.repository.port import AsyncRepository, AsyncRepositoryFactory
+from pycraftcore.runtime.adapter import PythonSafeCodeFactory
+from pycraftcore.runtime.configuration import SafeCodeSettings
+
+from bootstrap.di.base_di import BaseDI
+from toolbox.adapter.outbound.code.python_tool import PythonTool
+from toolbox.adapter.outbound.registry.in_memory_tool_registry import InMemoryToolRegistry
+from toolbox.adapter.outbound.specification import python_sandbox, user_database
+from toolbox.adapter.outbound.sql.sql_tool import SqlTool
+from toolbox.application.port.outbound.tool_port import ToolPort, ToolRegistryPort
+from toolbox.application.use_case.execute_tool_usecase import ExecuteToolUseCase
+
+
+class ToolboxDI(BaseDI):
+    async def _tools(self) -> list[ToolPort]:
+        return [await self._sql_tool(), self._python_tool()]
+
+    async def _tool_registry(self) -> ToolRegistryPort:
+        return InMemoryToolRegistry(await self._tools())
+
+    def _execute_tool_use_case(self, registry: ToolRegistryPort) -> ExecuteToolUseCase:
+        return ExecuteToolUseCase(registry, self._logging)
+
+    async def _sql_tool(self) -> SqlTool:
+        repository: AsyncRepository = await self._sqlite_repository(user_database.CONNECTOR_NAME)
+        return SqlTool(
+            repository=repository,
+            query_factory=SqlHandlerFactory(),
+            specification=user_database.SPECIFICATION,
+            default_dialect=user_database.DIALECT,
+        )
+
+    def _python_tool(self) -> PythonTool:
+        settings = SafeCodeSettings(
+            code_timeout=python_sandbox.TIMEOUT_SECONDS,
+            max_memory_mb=python_sandbox.MAX_MEMORY_MB,
+        )
+        return PythonTool(
+            code_factory=PythonSafeCodeFactory(settings=settings),
+            specification=python_sandbox.SPECIFICATION,
+            semaphore=asyncio.Semaphore(python_sandbox.MAX_CONCURRENCY),
+        )
+
+    async def _sqlite_repository(self, connector_name: str) -> AsyncRepository:
+        connector: DatabaseConnector = self._configuration.connector.database(connector_name)
+        factory: AsyncRepositoryFactory = SQLiteRepositoryFactory(SqliteSettingsMapper(connector)())
+        self._register_repository(factory)
+        return await factory.connect()
