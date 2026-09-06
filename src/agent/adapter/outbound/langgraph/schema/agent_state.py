@@ -13,6 +13,7 @@ class AgentState(BaseModel):
     reflection: ReflectionDecision | None = None
     last_node: str = ""
     session_id: str = ""
+    question: str = ""
     iteration: int = 0
     max_iterations: int = 20
     final_answer: str | None = None

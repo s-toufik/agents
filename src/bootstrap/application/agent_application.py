@@ -6,7 +6,6 @@ from fastapi import FastAPI
 from pycraftcore.http.middleware import RequestMiddleware
 from pycraftcore.http.middleware.request_id_middleware import RequestIDMiddleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
 
 from bootstrap.configuration.settings import ProcessSettings
 from bootstrap.container.agent_container import AgentContainer
@@ -52,12 +51,6 @@ def create_agent_application(settings: ProcessSettings | None = None) -> FastAPI
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    @application.get("/health")
-    async def health() -> JSONResponse:
-        if not container.is_ready:
-            return JSONResponse({"status": "starting"}, status_code=503)
-        return JSONResponse({"status": "ok"})
 
     return application
 

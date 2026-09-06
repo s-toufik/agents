@@ -1,9 +1,7 @@
-import asyncio
 from pathlib import Path
 
 import pytest
 import uvicorn as uvicorn_module
-from fastapi.routing import APIRoute
 from starlette.testclient import TestClient
 
 from bootstrap.application.agent_application import create_agent_application, main
@@ -31,16 +29,6 @@ def make_settings() -> ProcessSettings:
     )
 
 
-def test_health_is_503_before_the_lifespan_has_booted_the_container() -> None:
-    app = create_agent_application(settings=make_settings())
-    health_route = next(r for r in app.routes if getattr(r, "path", None) == "/health")
-    assert isinstance(health_route, APIRoute)
-
-    response = asyncio.run(health_route.endpoint())
-
-    assert response.status_code == 503
-
-
 def test_full_lifespan_includes_the_booted_routers_and_reports_healthy(monkeypatch) -> None:
     # The real end-to-end boot (real toolbox, real sqlite, real graph
     # building) is already proven directly against AgentContainer in
@@ -59,6 +47,7 @@ def test_full_lifespan_includes_the_booted_routers_and_reports_healthy(monkeypat
 
     async def fake_boot(self) -> None:
         self._routers.append(fake_router)
+        self._routers.append(self._actuator_router())
 
     async def fake_stop(self) -> None:
         return None
@@ -68,11 +57,11 @@ def test_full_lifespan_includes_the_booted_routers_and_reports_healthy(monkeypat
     app = create_agent_application(settings=make_settings())
 
     with TestClient(app) as client:
-        health = client.get("/health")
+        health = client.get("/actuator/health")
         fake = client.get("/fake/ping")
 
     assert health.status_code == 200
-    assert health.json() == {"status": "ok"}
+    assert health.json() == {"status": "UP"}
     assert fake.status_code == 200
     assert fake.json() == {"pong": True}
 

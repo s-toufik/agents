@@ -22,13 +22,22 @@ class ReflectionNode(Node):
         last: ConversationMessage | None = agent_state.conversation.last_assistant()
         answer: str = last.content if last else "(no assistant answer found)"
 
+        question: str = agent_state.question
+        if question:
+            first_user_question: ConversationMessage | None = agent_state.conversation.first_user()
+            question: str = (
+                first_user_question.content if first_user_question else "(no user question found)"
+            )
+
         messages: list[BaseMessage] = [
             SystemMessage(
                 content=self._prompt_service.reflection_system_prompt(
                     ReflectionDecision.model_json_schema()
                 )
             ),
-            HumanMessage(content=f"Evaluate this answer:\n\n{answer}"),
+            HumanMessage(
+                content=f"User question is:\n\n {question} Assistant answer is: \n\n{answer}"
+            ),
         ]
 
         raw: dict[str, Any] = cast(

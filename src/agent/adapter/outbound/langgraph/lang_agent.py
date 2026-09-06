@@ -56,4 +56,5 @@ class LangAgent:
     @staticmethod
     def _append_user_message(state: AgentState, message: str) -> None:
         state.iteration = 0
+        state.question = message
         state.conversation.append(ConversationMessage(role=Role.USER, content=message))

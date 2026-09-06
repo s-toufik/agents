@@ -7,6 +7,7 @@ from starlette.testclient import TestClient
 
 from bootstrap.configuration.settings import ProcessSettings
 from bootstrap.container.toolbox_container import ToolboxContainer
+from src import APPLICATION_API_ROOT_PATH
 
 REAL_CONFIG_DIR = Path(__file__).resolve().parents[3] / "config"
 
@@ -62,10 +63,11 @@ async def test_entering_the_asgi_app_boots_real_tools_and_health_reports_ok() ->
     container = ToolboxContainer(make_settings())
 
     with TestClient(container.asgi_app, base_url="http://127.0.0.1:8001") as client:
-        response = client.get("/health")
+        response = client.get(f"{APPLICATION_API_ROOT_PATH}/actuator/health/readiness")
 
     assert response.status_code == 200
-    assert set(response.json()["tools"]) == {
+    assert response.json() == {"status": "UP"}
+    assert {tool.name for tool in await container.mcp_server.list_tools()} == {
         "users_tables",
         "python_executor",
         "file_reader",

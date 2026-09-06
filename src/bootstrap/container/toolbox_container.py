@@ -9,6 +9,14 @@ from pycraftcore.logger.port import Logger
 from starlette.applications import Starlette
 
 from bootstrap.di.toolbox_di import ToolboxDI
+from src import (
+    APPLICATION_API_ROOT_PATH,
+    APPLICATION_AUTHORS_EMAIL,
+    APPLICATION_DEPLOYMENT_ENVIRONMENT,
+    APPLICATION_NAME,
+    APPLICATION_VERSION,
+)
+from toolbox.adapter.inbound.mcp.actuator import ActuatorRouter
 from toolbox.adapter.inbound.mcp.mcp_asgi_factory import build_mcp_asgi_app
 from toolbox.adapter.inbound.mcp.mcp_server_factory import build_mcp_server
 from toolbox.adapter.inbound.mcp.tool_binder import ToolBinder
@@ -29,7 +37,7 @@ class ToolboxContainer(ToolboxDI):
 
     @cached_property
     def mcp_server(self) -> MCPServer:
-        return build_mcp_server(
+        server: MCPServer = build_mcp_server(
             name=SERVER_NAME,
             version=SERVER_VERSION,
             instructions=(
@@ -38,6 +46,17 @@ class ToolboxContainer(ToolboxDI):
             ),
             lifespan=self._lifespan,
         )
+
+        ActuatorRouter(
+            server=server,
+            app_name=APPLICATION_NAME,
+            app_version=APPLICATION_VERSION,
+            app_deployment_environment=APPLICATION_DEPLOYMENT_ENVIRONMENT,
+            app_api_root_path=APPLICATION_API_ROOT_PATH,
+            app_authors=APPLICATION_AUTHORS_EMAIL,
+        ).register_actuator_routes()
+
+        return server
 
     @cached_property
     def asgi_app(self) -> Starlette:

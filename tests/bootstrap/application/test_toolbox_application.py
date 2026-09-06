@@ -6,6 +6,7 @@ from starlette.testclient import TestClient
 
 from bootstrap.application.toolbox_application import create_toolbox_application, main
 from bootstrap.configuration.settings import ProcessSettings
+from src import APPLICATION_API_ROOT_PATH
 
 REAL_CONFIG_DIR = Path(__file__).resolve().parents[3] / "config"
 
@@ -33,15 +34,10 @@ def test_the_returned_app_is_the_containers_own_mcp_asgi_app_and_boots_real_tool
     app = create_toolbox_application(settings=make_settings())
 
     with TestClient(app, base_url="http://127.0.0.1:8001") as client:
-        response = client.get("/health")
+        response = client.get(f"{APPLICATION_API_ROOT_PATH}/actuator/health/readiness")
 
     assert response.status_code == 200
-    assert set(response.json()["tools"]) == {
-        "users_tables",
-        "python_executor",
-        "file_reader",
-        "file_writer",
-    }
+    assert response.json() == {"status": "UP"}
 
 
 def test_main_runs_uvicorn_with_the_configured_host_and_port(monkeypatch) -> None:
