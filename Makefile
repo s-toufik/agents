@@ -18,6 +18,9 @@ endif
 test:
 	uv run pytest -n auto --disable-warnings
 
+evaluation:
+	pytest -m evaluation tests/evaluation
+
 lint:
 	uv run ruff check .
 

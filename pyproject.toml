@@ -60,6 +60,7 @@ dev = [
     "ruff",
     "ty",
     "pre-commit",
+    "deepeval>=4.2.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -69,6 +70,10 @@ where = ["src"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "evaluation: live DeepEval agent-quality tests -- call a real local LLM and a real toolbox; excluded by default, run explicitly with `pytest -m evaluation tests/evaluation`",
+]
+addopts = "-m 'not evaluation'"
 
 [tool.ruff]
 line-length = 100
